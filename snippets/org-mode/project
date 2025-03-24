@@ -5,26 +5,20 @@
 #+TITLE: $1
 #+CATEGORY: proj
 #+AUTHOR: Elam Day-Friedland
-#+COLUMNS: %35ITEM(Task) %10TODO(State) %Effort(Estimated){:} %SCHEDULED %CLOSED %CLOCKSUM(Clocked) %CLOCKSUM_T(Today)
+#+COLUMNS: %35ITEM(Task) %10TODO(State) %Effort(Estimated){:} %SCHEDULED(Scheduled) %DEADLINE(Deadline){:} %CLOSED %CLOCKSUM(Clocked) %CLOCKSUM_T(Today)
 
 Link to Repo: ${2: [[TODO]]}
 
 
 
-* Reporting
-#+BEGIN: columnview :hlines 2 :skip-empty-rows "t" :indent "t" :id ${3: `(org-id-get-create)`}
+* $1 Tasks
+#+BEGIN: columnview :hlines 2 :skip-empty-rows "t" :indent "t"
 #+END
 ** Time Report
 #+BEGIN: clocktable :scope subtree :maxlevel 2
 #+END:
 
 
-* TODO Tasks
-:PROPERTIES:
-:ID:       ${3:$(format (yas-field-value 3))}
-:VISIBILITY: children
-:END:
-
-${4:$(unless yas/modified-p (prog1 (org-update-all-dblocks) (org-cycle-global) 
-                                                  (yas/schedule-field-skip)))}
-$0
+** TODO $0
+${3: $(unless yas/modified-p (prog1 (org-update-all-dblocks)
+	     (yas/schedule-field-skip)))}
