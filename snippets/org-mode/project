@@ -20,5 +20,5 @@ Link to Repo: ${2: [[TODO]]}
 
 
 ** TODO $0
-${3: $(unless yas/modified-p (prog1 (org-update-all-dblocks)
+${3: $(unless yas/modified-p (prog1 (org-update-all-dblocks) (org-agenda-file-to-front)
 	     (yas/schedule-field-skip)))}
