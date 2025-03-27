@@ -15,7 +15,7 @@ Link to Repo: ${2: [[TODO]]}
 #+BEGIN: columnview :hlines 2 :skip-empty-rows "t" :indent "t"
 #+END
 ** Time Report
-#+BEGIN: clocktable :scope subtree :maxlevel 2
+#+BEGIN: clocktable :maxlevel 3
 #+END:
 
 
