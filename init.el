@@ -53,6 +53,11 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(org-agenda-files
+   '("~/Documents/projects/coursework.org"
+     "/Users/elamdf/Documents/projects/kodiak.org"
+     "/Users/elamdf/Documents/projects/papers.org"
+     "/Users/elamdf/Documents/projects/apl_photonics.org"))
  '(package-selected-packages
    '(command-log-mode counsel counsel-projectile doom-modeline
 		      doom-themes helpful ivy ivy-rich lsp-mode lsp-ui
@@ -112,7 +117,6 @@
 
 
 (use-package swiper :ensure t)
-
 
 (use-package doom-themes
   :init (load-theme 'doom-palenight t))
@@ -232,6 +236,28 @@
 (global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
+(setq org-deadline-warning-days 1)
+(setq org-tag-alist
+      '(;; Places
+	(:startgroup . nil)
+        ("@home" . ?H)
+        ("@work" . ?W)
+(:endgroup . nil)
+        ;; Devices
+	(:startgroup . nil)
+        ("@computer" . ?C)
+        ("@book" . ?B)
+	("@paper" . ?P)
+(:endgroup . nil)
+        ;; Activities
+	(:startgroup . nil)
+        ("@thinking" . ?T)
+        ("@programming" . ?p)
+        ("@writing" . ?w)
+        ("@creative" . ?c)
+        ("@reading" . ?r)
+(:endgroup . nil)))
+      
 ;;; ----- Dired -----
 
 (defun dw/dired-mode-hook ()
@@ -267,6 +293,7 @@
           snippet-mode) . yas-minor-mode-on)
   :init
   (setq yas-snippet-dir "~/.emacs.d/snippets"))
+(yas-global-mode)
 ;; to run things after filling in field
 (defun yas/schedule-field-skip ()
   (add-hook 'post-command-hook 'yas/field-skip-once 'append 'local))
