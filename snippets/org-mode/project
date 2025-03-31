@@ -3,11 +3,11 @@
 # key: project
 # --
 #+TITLE: $1
-#+CATEGORY: proj
+#+CATEGORY: ${2: $1}
 #+AUTHOR: Elam Day-Friedland
 #+COLUMNS: %35ITEM(Task) %10TODO(State) %Effort(Estimated){:} %SCHEDULED(Scheduled) %DEADLINE(Deadline){:} %CLOSED %CLOCKSUM(Clocked) %CLOCKSUM_T(Today)
 
-Link to Repo: ${2: [[TODO]]}
+Link to Repo: ${3: [[TODO]]}
 
 
 
