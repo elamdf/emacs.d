@@ -1,3 +1,4 @@
+
 (setq inhibit-startup-message t)
 
 (scroll-bar-mode -1) ; no visual scrolbar
@@ -54,15 +55,21 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  '(org-agenda-files
-   '("~/Documents/projects/coursework.org"
+   '("/Users/elamdf/Documents/projects/ofot.org"
+     "/Users/elamdf/Documents/projects/coursework.org"
      "/Users/elamdf/Documents/projects/kodiak.org"
      "/Users/elamdf/Documents/projects/papers.org"
      "/Users/elamdf/Documents/projects/apl_photonics.org"))
+ '(org-agenda-sorting-strategy
+   '((agenda todo-state-down habit-down time-up urgency-down
+	     category-keep)
+     (todo urgency-down category-keep)
+     (tags urgency-down category-keep) (search category-keep)))
  '(package-selected-packages
    '(command-log-mode counsel counsel-projectile doom-modeline
 		      doom-themes helpful ivy ivy-rich lsp-mode lsp-ui
 		      magit projectile rainbow-delimiters swiper
-		      yasnippet)))
+		      yasnippet yasnippet-snippets)))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -292,7 +299,8 @@
           conf-mode
           snippet-mode) . yas-minor-mode-on)
   :init
-  (setq yas-snippet-dir "~/.emacs.d/snippets"))
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets")))
+(use-package yasnippet-snippets)
 (yas-global-mode)
 ;; to run things after filling in field
 (defun yas/schedule-field-skip ()
@@ -303,3 +311,4 @@
       (yas/next-field)
     (error nil))
   (remove-hook 'post-command-hook 'yas/field-skip-once 'local))
+(put 'list-timers 'disabled nil)
