@@ -54,22 +54,31 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(org-agenda-custom-commands
+   '(("x" "Describe command here" tags "" nil)
+     ("d" "Daily Agenda" ((agenda "" ((org-agenda-span 'day)))) nil)))
  '(org-agenda-files
-   '("/Users/elamdf/Documents/projects/ofot.org"
+   '("/Users/elamdf/Documents/projects/motifs.org"
+     "/Users/elamdf/Documents/projects/ofot.org"
      "/Users/elamdf/Documents/projects/coursework.org"
      "/Users/elamdf/Documents/projects/kodiak.org"
      "/Users/elamdf/Documents/projects/papers.org"
      "/Users/elamdf/Documents/projects/apl_photonics.org"))
  '(org-agenda-sorting-strategy
    '((agenda todo-state-down habit-down time-up urgency-down
-	     category-keep)
+             category-keep)
      (todo urgency-down category-keep)
      (tags urgency-down category-keep) (search category-keep)))
+ '(org-agenda-span 'week)
  '(package-selected-packages
    '(command-log-mode counsel counsel-projectile doom-modeline
-		      doom-themes helpful ivy ivy-rich lsp-mode lsp-ui
-		      magit projectile rainbow-delimiters swiper
-		      yasnippet yasnippet-snippets)))
+                      doom-themes exec-path-from-shell helpful htmlize
+                      ivy ivy-rich lsp-metals lsp-mode lsp-ui magit
+                      ox-reveal projectile rainbow-delimiters swiper
+                      treemacs yasnippet yasnippet-snippets))
+ '(projectile-global-ignore-file-patterns '("\\#*"))
+ '(projectile-indexing-method 'alien)
+ '(projectile-project-search-path '(list ("~/bwrc" . 1) ("~/Documents" . 1))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
@@ -122,6 +131,13 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
+(use-package exec-path-from-shell :ensure t)
+(setq exec-path-from-shell-debug t)
+(when (memq window-system '(mac ns x))
+  (exec-path-from-shell-initialize))
+(when (daemonp)
+  (exec-path-from-shell-initialize))
+
 
 (use-package swiper :ensure t)
 
@@ -152,6 +168,9 @@
 (global-unset-key (kbd "<right>"))
 (global-unset-key (kbd "<up>"))
 (global-unset-key (kbd "<down>"))
+;; tabs are stupid
+(setq-default indent-tabs-mode nil)
+
 
 (use-package projectile
   :diminish projectile-mode
@@ -208,6 +227,25 @@
   :commands lsp-ui-mode)
 (add-hook 'python-mode-hook 'lsp-deferred)
 
+(use-package lsp-metals
+  :ensure t
+  :custom
+  ;; You might set metals server options via -J arguments. This might not always work, for instance when
+  ;; metals is installed using nix. In this case you can use JAVA_TOOL_OPTIONS environment variable.
+  (lsp-metals-server-args '(;; Metals claims to support range formatting by default but it supports range
+                            ;; formatting of multiline strings only. You might want to disable it so that
+                            ;; emacs can use indentation provided by scala-mode.
+                            "-J-Dmetals.allow-multiline-string-formatting=off"
+                            ;; Enable unicode icons. But be warned that emacs might not render unicode
+                            ;; correctly in all cases.
+                            "-J-Dmetals.icons=unicode"))
+  ;; In case you want semantic highlighting. This also has to be enabled in lsp-mode using
+  ;; `lsp-semantic-tokens-enable' variable. Also you might want to disable highlighting of modifiers
+  ;; setting `lsp-semantic-tokens-apply-modifiers' to `nil' because metals sends `abstract' modifier
+  ;; which is mapped to `keyword' face.
+  (lsp-metals-enable-semantic-highlighting t)
+  :hook (scala-mode . lsp))
+
 ;;; ----- Essential Org Mode Configuration -----
 
 (setq org-ellipsis " ▾"
@@ -224,6 +262,7 @@
  '((emacs-lisp . t)
    (shell . t)))
 
+;;; --- Org --- 
 ;; Use org-tempo
 (use-package org-tempo
   :ensure nil
@@ -264,7 +303,15 @@
         ("@creative" . ?c)
         ("@reading" . ?r)
 (:endgroup . nil)))
-      
+
+(setq org-src-fontify-natively t)
+(use-package htmlize)
+(setq org-export-publishing-directory "./assets")
+
+(setq org-agenda-custom-coummands
+      '(("d" "Daily Agenda"
+         ((agenda "" ((org-agenda-span 'day)))))))
+(use-package ox-reveal)
 ;;; ----- Dired -----
 
 (defun dw/dired-mode-hook ()
@@ -299,7 +346,7 @@
           conf-mode
           snippet-mode) . yas-minor-mode-on)
   :init
-  (setq yas-snippet-dirs '("~/.emacs.d/snippets")))
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/yasnippet-snippets/snippets")))
 (use-package yasnippet-snippets)
 (yas-global-mode)
 ;; to run things after filling in field
