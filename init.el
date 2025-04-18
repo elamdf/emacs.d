@@ -28,6 +28,8 @@
 (unless package-archive-contents
  (package-refresh-contents))
 
+(load-library   "server")
+(if (not (server-running-p))  (server-start))
 ;; Initialize use-package on non-Linux platforms
 (unless (package-installed-p 'use-package)
    (package-install 'use-package))
@@ -65,9 +67,7 @@
      "/Users/elamdf/Documents/projects/papers.org"
      "/Users/elamdf/Documents/projects/apl_photonics.org"))
  '(org-agenda-sorting-strategy
-   '((agenda todo-state-down habit-down time-up urgency-down
-             category-keep)
-     (todo urgency-down category-keep)
+   '((agenda user-defined-up) (todo urgency-down category-keep)
      (tags urgency-down category-keep) (search category-keep)))
  '(org-agenda-span 'week)
  '(package-selected-packages
@@ -171,6 +171,12 @@
 ;; tabs are stupid
 (setq-default indent-tabs-mode nil)
 
+(use-package markdown-mode
+  :ensure t
+  :mode ("README\\.md\\'" . gfm-mode)
+  :init (setq markdown-command "multimarkdown")
+  :bind (:map markdown-mode-map
+         ("C-c C-e" . markdown-do)))
 
 (use-package projectile
   :diminish projectile-mode
@@ -262,7 +268,28 @@
  '((emacs-lisp . t)
    (shell . t)))
 
-;;; --- Org --- 
+;;; --- Org ---
+
+
+(setq debug-on-error t)
+(defun my/compare-todo-status (a b)
+  "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
+Return 1 if A > B, 0 if A = B, and -1 if A < B."
+  (let ((status-order '("TODO" "WAIT" "DONE")))
+    (cl-labels ((status-rank (str)
+                  (or (cl-position-if (lambda (s) (string-match-p s str)) status-order)
+                      (length status-order))))  ; if none found, return a high rank
+      (let ((rank-a (status-rank a))
+            (rank-b (status-rank b)))
+        (cond
+         ((< rank-a rank-b) -1)
+         ((> rank-a rank-b) 1)
+         (t 0))))))
+
+
+
+
+(setq org-agenda-cmp-user-defined 'my/compare-todo-status)
 ;; Use org-tempo
 (use-package org-tempo
   :ensure nil
@@ -302,8 +329,13 @@
         ("@writing" . ?w)
         ("@creative" . ?c)
         ("@reading" . ?r)
-(:endgroup . nil)))
+        ("@discarded" . ?d)
+        (:endgroup . nil)
 
+        ))
+
+(setq org-todo-keywords
+      '((sequence "TODOI(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELED(c@)")))
 (setq org-src-fontify-natively t)
 (use-package htmlize)
 (setq org-export-publishing-directory "./assets")
