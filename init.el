@@ -1,14 +1,17 @@
 
 (setq inhibit-startup-message t)
 
+(when (display-graphic-p)
+
 (scroll-bar-mode -1) ; no visual scrolbar
 (tool-bar-mode -1) ; disable toolbar
 (tooltip-mode -1) ; no tooltips
 (set-fringe-mode 10) ; breathing room
 
+
+
+)
 (menu-bar-mode -1) ; no menu bar
-
-
 
 (set-face-attribute 'default nil :font "Fira Code Retina" :height 140)
 
@@ -71,11 +74,13 @@
      (tags urgency-down category-keep) (search category-keep)))
  '(org-agenda-span 'week)
  '(package-selected-packages
-   '(command-log-mode counsel counsel-projectile doom-modeline
+   '(command-log-mode company counsel counsel-projectile doom-modeline
                       doom-themes exec-path-from-shell helpful htmlize
-                      ivy ivy-rich lsp-metals lsp-mode lsp-ui magit
-                      ox-reveal projectile rainbow-delimiters swiper
-                      treemacs yasnippet yasnippet-snippets))
+                      ivy ivy-rich ivy-todo lsp-metals lsp-mode lsp-ui
+                      magit orderless org-projectile ox-reveal
+                      projectile rainbow-delimiters rust-mode swiper
+                      tree-sitter tree-sitter-langs tree-sitter-yaml
+                      treemacs yaml-mode yasnippet yasnippet-snippets))
  '(projectile-global-ignore-file-patterns '("\\#*"))
  '(projectile-indexing-method 'alien)
  '(projectile-project-search-path '(list ("~/bwrc" . 1) ("~/Documents" . 1))))
@@ -85,6 +90,8 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(use-package company)
 
 (use-package ivy
   :diminish
@@ -103,6 +110,14 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
+(setq ivy-re-builders-alist '((t . ivy--regex)))
+
+
+(use-package orderless
+  :ensure t
+  :custom
+  (completion-styles '(orderless basic))
+  (completion-category-overrides '((file (styles basic partial-completion)))))
 
 (use-package ivy-rich
   :after ivy
@@ -119,6 +134,7 @@
   (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
   :config
   (counsel-mode 1))
+(setq counsel-find-file-at-point t)
 
 (use-package helpful
   :commands (helpful-callable helpful-variable helpful-command helpful-key)
@@ -190,6 +206,7 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
+
 (use-package tramp
 
   :defer t
@@ -232,7 +249,18 @@
 (use-package lsp-ui
   :commands lsp-ui-mode)
 (add-hook 'python-mode-hook 'lsp-deferred)
-
+(use-package tree-sitter)
+(use-package yaml-mode)
+(use-package tree-sitter-langs)
+(require 'tree-sitter)
+(require 'tree-sitter-langs)
+(use-package rust-mode
+  :ensure t
+  :mode ("\\.rs\\'" . rust-mode)
+  :custom
+  (rust-indent-where-clause t)
+  (rust-format-on-save t)
+  (rust-format-show-buffer nil))
 (use-package lsp-metals
   :ensure t
   :custom
@@ -271,7 +299,7 @@
 ;;; --- Org ---
 
 
-(setq debug-on-error t)
+
 (defun my/compare-todo-status (a b)
   "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
 Return 1 if A > B, 0 if A = B, and -1 if A < B."
@@ -309,6 +337,44 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 (global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
+
+(defun my/org-todo-list-swiper ()
+  "Open `org-todo-list` and start `swiper` in its buffer."
+  (interactive)
+  (let ((buf (get-buffer-create "*Org Agenda*")))
+    ;; Generate the global todo list
+    (org-todo-list)
+    ;; Wait for the agenda buffer to be displayed
+    (with-current-buffer buf
+      (while (not (get-buffer-window buf))
+        (sit-for 0.05)))
+    ;; Switch to that window and run swiper
+    (select-window (get-buffer-window buf))
+    (swiper)))
+(global-set-key (kbd "C-c t") #'my/org-todo-list-swiper)
+
+(defvar meeting-notes-dir
+  (expand-file-name "~/Documents/meeting_notes")
+  "Directory where new meeting notes files are created.")
+
+(defun my/create-meeting-notes-file ()
+  "Create a new Org file in `meeting-notes-dir`, insert and expand the `meet` snippet."
+  (interactive)
+  (let* ((default-directory meeting-notes-dir)
+         (_ (unless (file-exists-p meeting-notes-dir)
+              (make-directory meeting-notes-dir t)))
+         (filename (make-temp-file "meeting-" nil ".org"))
+         (buf (find-file filename)))
+    (with-current-buffer buf
+      (erase-buffer)
+      ;; insert snippet key and expand
+      (insert "<meet")
+      (goto-char (point-max))
+      (yas-expand))
+    (switch-to-buffer buf)))
+
+(global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
+
 (setq org-deadline-warning-days 1)
 (setq org-tag-alist
       '(;; Places
@@ -335,7 +401,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
         ))
 
 (setq org-todo-keywords
-      '((sequence "TODOI(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELED(c@)")))
+      '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELED(c@)")))
 (setq org-src-fontify-natively t)
 (use-package htmlize)
 (setq org-export-publishing-directory "./assets")
@@ -378,9 +444,12 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
           conf-mode
           snippet-mode) . yas-minor-mode-on)
   :init
-  (setq yas-snippet-dirs '("~/.emacs.d/snippets" "~/.emacs.d/yasnippet-snippets/snippets")))
+  (setq yas-snippet-dirs '("~/.emacs.d/snippets/org-mode" "~/.emacs.d/yasnippet-snippets/snippets")))
 (use-package yasnippet-snippets)
 (yas-global-mode)
+(add-hook 'emacs-startup-hook (lambda () (yas-load-directory "path/to/your/.emacs.d/snippets")))
+
+
 ;; to run things after filling in field
 (defun yas/schedule-field-skip ()
   (add-hook 'post-command-hook 'yas/field-skip-once 'append 'local))
@@ -391,3 +460,49 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
     (error nil))
   (remove-hook 'post-command-hook 'yas/field-skip-once 'local))
 (put 'list-timers 'disabled nil)
+
+;; meeting notes templating
+
+(defun my/rename-meeting-notes-file-maybe ()
+  "If the just-finished YASnippet had key 'meeting', rename the file."
+        (save-excursion
+          (goto-char (point-min))
+          (when (re-search-forward "^#\\+TITLE: \\(.*\\)$" nil t)
+            (let* ((title (match-string 1))
+                   (safe-title (replace-regexp-in-string "[^a-zA-Z0-9]+" "_" (downcase title)))
+                   (date (format-time-string "%Y-%m-%d"))
+                   (new-name (format "%s_%s.org" safe-title date))
+                   (new-path (expand-file-name new-name (file-name-directory buffer-file-name))))
+              (unless (string= new-path buffer-file-name)
+                (when (or (not (file-exists-p new-path))
+                          (yes-or-no-p (format "Rename file to %s?" new-name)))
+                  (rename-file buffer-file-name new-path t)
+                  (set-visited-file-name new-path t t)
+                  (set-buffer-modified-p nil)
+                  (message "Renamed and switched to: %s" new-name)))))))
+
+
+(defun my/insert-org-participant-tags ()
+  "Prompt for participant names, add new ones to the file, and return a #+TAGS: line as a string."
+  (let* ((file "~/.org-participants.txt")
+         (existing (if (file-exists-p file)
+                       (split-string (with-temp-buffer
+                                       (insert-file-contents file)
+                                       (buffer-string)) "\n" t)
+                     '()))
+         (crm-separator "[ \t]*,[ \t]*") ;; allow names with spaces
+         (input (completing-read-multiple
+                 "Participants (comma-separated): " existing nil nil))
+         (tags (mapcar (lambda (n)
+                         (concat "@" (replace-regexp-in-string "[^a-zA-Z0-9]+" "_" (downcase n)) "_participant"))
+                       input))
+         (tag-line (concat " " (string-join tags " "))))
+    ;; Append new names to the file if needed
+    (let ((new-names (seq-remove (lambda (n) (member n existing)) input)))
+      (when new-names
+        (with-temp-buffer
+          (insert (mapconcat #'identity new-names "\n"))
+          (insert "\n")
+          (append-to-file (point-min) (point-max) file))))
+    tag-line))  ;; Return this string instead of inserting
+
