@@ -1,0 +1,62 @@
+* Elam's `emacs` notes
+
+
+** Kill Ring
+
+
+* Useful keybindings table
+| Keybind                       | Action                                      | vi equivalent  | functionality |
+|-------------------------------+---------------------------------------------+----------------+---------------|
+| M-<number> <cmd>              | <cmd> with arg <number>                     | <number> cmd   | meta          |
+| C-u <number, default 4> <cmd> | <cmd> with arg <number>                     |                | meta          |
+| C-S-UP                        | kill current table row `org-table-kill-row` |                | org           |
+| C-x C-x                       | (activate,) swap mark and point             |                | movement,mark |
+| C-SPC                         | (activate,) set mark                        |                | movement,mark |
+| C-SPC C-SPC                   | set mark                                    |                | movement,mark |
+| C-w                           | kill region                                 | d              | movement,mark |
+| M-w                           | copy region                                 | y              | movement,mark |
+| C-u C-SPC                     | pop mark                                    | C-o            | movement,mark |
+| C-x r SPC <r>                 | store point in <r>                          |                | movement,reg  |
+| C-x r j <r>                   | jump to <r>                                 |                | movement,reg  |
+| C-l                           | scroll point to {mid,top,bot}               | zz             | movement      |
+| C-M-l                         | focus current "function"                    |                | movement      |
+| M-{f,b}                       | go {forward, backward} by a word            | {w,b}          | movement      |
+| C-{f,b}                       | go {forward,backward} by a character        | {l,h}          | movement      |
+| C-v                           | page down                                   |                | movement      |
+| M-v                           | page up                                     |                | movement      |
+| M-^                           | merge lines                                 | j              | manipulation  |
+| M-{d, BACKSPACE}              | kill word {forward, backward}               | d{w,b}         | manipulation  |
+| C-d x                         | delete character                            | x              | manipulation  |
+| M-z <char>                    | kill up to <char>                           | df<char>       | manipulation  |
+| M-k                           | kill to end of sentance                     | df .           | manipulation  |
+| C-M-k                         | kill balanced expression                    | di <something> | manipulation  |
+| C-h v                         | describe-variable                           |                | info          |
+| C-h v kill-ring               | view full kill ring                         |                | info          |
+| <arg> C-k                     | kill to end of line, kill <arg> lines       | d$. <arg>dd    | manipulation  |
+| C-c p s r                     | ripgrep within project                      |                | projectile    |
+| TAB                           | cycle local header visibility               |                | org           |
+| C-c C-{n,p}                   | next/prev (visible) heading                 |                | org           |
+| C-c C-{f,b}                   | next/prev (visible) heading at same level   |                | org           |
+| C-c C-u                       | parent of current heading                   |                | org           |
+| C-c C-j                       | bring up jump map in org                    |                | org           |
+| M-RET                         | create a new heading                        |                | org           |
+| TAB                           | (on an empty header) cycle header level     |                | org           |
+| M-{left, right}               | promote/demote heading                      |                | org           |
+| C-h f                         | describe-function                           |                | info          |
+| C-s                           | incremental search (isearch) forward        |                | movement      |
+| C-r                           | incremental search (isearch) backward       |                | movement      |
+| M-{up,down}                   | swap heading subtree                        |                | manipulation  |
+| C-u C-c C-x C-u               | update all dynamic blocks in file           |                | org           |
+| C-x C-;                       | comment out                                 |                | manipulation  |
+| C-c C-d                       | add deadline to heading                     |                | org           |
+| C-c C-o                       | follow link                                 |                | org           |
+| C-c C-t                       | rotate unmarked -> TODO -> DONE             |                | org           |
+| C-c C-x e                     | set estimated effort                        |                | org           |
+| C-c C-x ;                     | org-timer-set-timer                         |                | org           |
+| C-c C-x TAB                   | org-clock-in (on current task)b             |                | org           |
+| C-c C-x C-o                   | org-clock-out                               |                | org           |
+| C-c [                         | add org file to agenda                      |                | org           |
+| C-c a                         | org agenda menu                             |                | org           |
+| C-c C-c                       | normalize (fix) timestamp                   |                | org           |
+| C-c C-TAB                     | show all children                           |                | org           |
+| M-m                           | beginning of text in a line                 | ^              | movement      |
