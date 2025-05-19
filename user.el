@@ -104,4 +104,14 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
              (not (file-exists-p buffer-file-name)))
     (message "%s" (nth (random (length my/org-quotes)) my/org-quotes))))
 
+
+
+(defun my/ensure-ollama-running (&rest args)
+  "Start `ollama serve` if it's not already running."
+  (unless (get-process "ollama")
+    (let ((proc (start-process-shell-command
+                 "ollama daemon" "*ollama daemon*"
+                 "pgrep -f 'ollama serve' || ollama serve")))
+      (set-process-query-on-exit-flag proc nil))))
 (provide 'user)
+

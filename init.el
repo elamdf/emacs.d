@@ -78,12 +78,13 @@
  '(org-agenda-span 'week)
  '(package-selected-packages
    '(command-log-mode company counsel counsel-projectile doom-modeline
-                      doom-themes exec-path-from-shell helpful htmlize
-                      ivy ivy-rich ivy-todo lsp-metals lsp-mode lsp-ui
-                      magit orderless org-projectile ox-reveal
-                      projectile rainbow-delimiters rust-mode swiper
-                      tree-sitter tree-sitter-langs tree-sitter-yaml
-                      treemacs yaml-mode yasnippet yasnippet-snippets))
+                      doom-themes exec-path-from-shell gptel helpful
+                      htmlize ivy ivy-rich ivy-todo lsp-metals
+                      lsp-mode lsp-ui magit orderless org-projectile
+                      ox-reveal projectile rainbow-delimiters
+                      rust-mode swiper tree-sitter tree-sitter-langs
+                      tree-sitter-yaml treemacs yaml-mode yasnippet
+                      yasnippet-snippets))
  '(projectile-global-ignore-file-patterns '("\\#*"))
  '(projectile-indexing-method 'alien)
  '(projectile-project-search-path '(list ("~/bwrc" . 1) ("~/Documents" . 1))))
@@ -137,7 +138,7 @@
   (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
   :config
   (counsel-mode 1))
-(setq counsel-find-file-at-point t)
+;; (setq counsel-find-file-at-point t)
 
 (use-package helpful
   :commands (helpful-callable helpful-variable helpful-command helpful-key)
@@ -398,7 +399,7 @@
   (setq yas-snippet-dirs '("~/.emacs.d/snippets/org-mode" "~/.emacs.d/yasnippet-snippets/snippets")))
 (use-package yasnippet-snippets)
 (yas-global-mode)
-(add-hook 'emacs-startup-hook (lambda () (yas-load-directory "path/to/your/.emacs.d/snippets")))
+
 
 
 ;; to run things after filling in field
@@ -415,3 +416,26 @@
 ;; meeting notes templating
 
 (add-hook 'find-file-hook #'my/show-random-org-quote)
+
+;; gptel for local llm
+(use-package gptel)
+
+(setq
+ gptel-model 'gemma3:4b
+ gptel-backend (gptel-make-ollama "Gemma 3 4B"
+                 :host "localhost:11434"
+                 :stream t
+                 :models '(gemma3:4b)))
+
+(add-hook 'gptel-post-response-functions 'gptel-end-of-response)
+(add-hook 'gptel-before-send-hook #'my/ensure-ollama-running)
+;; make sure ollama is running before sending gptel commands
+
+
+(defun my/advise-gptel-commands ()
+
+  "Advise all `gptel-` commands to ensure Ollama is running first."
+  (dolist (sym (apropos-internal "^gptel-" 'commandp))
+    (advice-add sym :before #'my/ensure-ollama-running)))
+
+(my/advise-gptel-commands)
