@@ -1,3 +1,7 @@
+
+;; global defs
+(defvar my/org-projects-dir "~/Documents/projects/")
+
 ;; org stuff
 (defun my/org-todo-list-swiper ()
   "Open `org-todo-list` and start `swiper` in its buffer."
@@ -93,8 +97,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 
 
 (defvar my/org-quotes
-  "quotes to display on a new org file"
-  '("“All you have to do is write one true sentence. Write the truest sentence that you know.” Ernest Hemingway"))
+  '("\“All you have to do is write one true sentence. Write the truest sentence that you know.\” Ernest Hemingway"))
 
 
 (defun my/show-random-org-quote ()
@@ -113,5 +116,39 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                  "ollama daemon" "*ollama daemon*"
                  "pgrep -f 'ollama serve' || ollama serve")))
       (set-process-query-on-exit-flag proc nil))))
-(provide 'user)
 
+(defun my/org-project-files ()
+  "Return a list of all .org files in `my/org-projects-dir`."
+  (directory-files-recursively my/org-projects-dir "\\.org$"))
+
+
+(defun my/zotero-latest-capture-string ()
+  "Return an Org entry string with title, authors, and tag from the most recently added Zotero item."
+  (let* ((query
+          "SELECT title.value AS title, \
+                  group_concat(creators.lastName || ', ' || creators.firstName, ', ') AS authors, \
+                  group_concat(c.collectionName, '/') AS collection_path \
+           FROM items \
+           JOIN itemData AS titleData ON titleData.itemID = items.itemID \
+           JOIN fields ON titleData.fieldID = fields.fieldID \
+           JOIN itemDataValues AS title ON titleData.valueID = title.valueID \
+           LEFT JOIN itemCreators ON itemCreators.itemID = items.itemID \
+           LEFT JOIN creators ON itemCreators.creatorID = creators.creatorID \
+           LEFT JOIN collectionItems AS ci ON ci.itemID = items.itemID \
+           LEFT JOIN collections AS c ON c.collectionID = ci.collectionID \
+           WHERE fields.fieldName = 'title' \
+           GROUP BY items.itemID \
+           ORDER BY items.dateAdded DESC \
+           LIMIT 1;")
+         (cmd (format "sqlite3 -readonly -separator '|' ~/Zotero/zotero.sqlite \"%s\"" query))
+         (raw (shell-command-to-string cmd)))
+    (when (string-match "\\(.*?\\)|\\(.*?\\)|\\(.*\\)" raw)
+      (let ((title (string-trim (match-string 1 raw)))
+            (authors (string-trim (match-string 2 raw)))
+            (tag (->> (string-trim (match-string 3 raw))
+                      (replace-regexp-in-string " " "_" )
+                      (replace-regexp-in-string "/" "_" ))))
+        (format "* READ %s by %s :%s:\nEntered on %%U\n%%?"
+                title authors tag)))))
+
+(provide 'user)

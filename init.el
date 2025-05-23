@@ -6,22 +6,19 @@
 (tool-bar-mode -1) ; disable toolbar
 (tooltip-mode -1) ; no tooltips
 (set-fringe-mode 10) ; breathing room
-
-
-
-)
 (menu-bar-mode -1) ; no menu bar
-
 (set-face-attribute 'default nil :font "Fira Code Retina" :height 140)
-
 (load-theme 'tango-dark)
+)
+
+
 
 ;; user funcs
-(add-to-list 'load-path user-emacs-directory)
+(add-to-list 'load-path (concat user-emacs-directory "/lisp"))
+
 (require 'user)
 
-;; Make ESC quit prompts
-(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+
 
 ;; Initialize package sources
 (require 'package)
@@ -44,6 +41,7 @@
 (setq use-package-always-ensure t)
 
 (column-number-mode)
+(which-key-mode)
 (global-display-line-numbers-mode t)
 (setq display-line-numbers 'relative) 
 
@@ -68,23 +66,22 @@
  '(org-agenda-files
    '("/Users/elamdf/Documents/projects/motifs.org"
      "/Users/elamdf/Documents/projects/ofot.org"
-     "/Users/elamdf/Documents/projects/coursework.org"
-     "/Users/elamdf/Documents/projects/kodiak.org"
      "/Users/elamdf/Documents/projects/papers.org"
+     "/Users/elamdf/Documents/projects/capture.org"     
      "/Users/elamdf/Documents/projects/apl_photonics.org"))
  '(org-agenda-sorting-strategy
    '((agenda user-defined-up) (todo urgency-down category-keep)
      (tags urgency-down category-keep) (search category-keep)))
  '(org-agenda-span 'week)
  '(package-selected-packages
-   '(command-log-mode company counsel counsel-projectile doom-modeline
-                      doom-themes exec-path-from-shell gptel helpful
-                      htmlize ivy ivy-rich ivy-todo lsp-metals
-                      lsp-mode lsp-ui magit orderless org-projectile
-                      ox-reveal projectile rainbow-delimiters
-                      rust-mode swiper tree-sitter tree-sitter-langs
-                      tree-sitter-yaml treemacs yaml-mode yasnippet
-                      yasnippet-snippets))
+   '(command-log-mode company conda counsel counsel-projectile
+                      doom-modeline doom-themes exec-path-from-shell
+                      gptel helpful htmlize ivy ivy-rich ivy-todo
+                      lsp-metals lsp-mode lsp-ui magit orderless
+                      org-projectile org-zotxt ox-reveal projectile
+                      rainbow-delimiters rust-mode swiper tree-sitter
+                      tree-sitter-langs tree-sitter-yaml treemacs
+                      yaml-mode yasnippet yasnippet-snippets zotxt))
  '(projectile-global-ignore-file-patterns '("\\#*"))
  '(projectile-indexing-method 'alien)
  '(projectile-project-search-path '(list ("~/bwrc" . 1) ("~/Documents" . 1))))
@@ -114,8 +111,10 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
-(setq ivy-re-builders-alist '((t . ivy--regex)))
-
+(with-eval-after-load 'ivy
+  (push (cons #'swiper (cdr (assq t ivy-re-builders-alist)))
+        ivy-re-builders-alist)
+  (push (cons t #'ivy--regex-fuzzy) ivy-re-builders-alist))
 
 (use-package orderless
   :ensure t
@@ -151,13 +150,6 @@
   ([remap describe-variable] . counsel-describe-variable)
   ([remap describe-key] . helpful-key))
 
-(use-package exec-path-from-shell :ensure t)
-(setq exec-path-from-shell-debug t)
-(when (memq window-system '(mac ns x))
-  (exec-path-from-shell-initialize))
-(when (daemonp)
-  (exec-path-from-shell-initialize))
-
 
 (use-package swiper :ensure t)
 
@@ -169,13 +161,6 @@
   :init (doom-modeline-mode 1)
   :custom ((doom-modeline-height 25)))
 
-(use-package which-key
-  :defer 0
-  :diminish which-key-mode
-  :config
-  (which-key-mode)
-  (setq which-key-idle-delay .3))
-
 ;; keybindings
 (setq mac-command-modifier 'meta) ; make cmd meta to save my thumb
 
@@ -183,11 +168,6 @@
 (use-package rainbow-delimiters
   :hook (prog-mode . rainbow-delimiters-mode))
 
-;; disable arrow keys to learn real bindings faster
-(global-unset-key (kbd "<left>"))
-(global-unset-key (kbd "<right>"))
-(global-unset-key (kbd "<up>"))
-(global-unset-key (kbd "<down>"))
 ;; tabs are stupid
 (setq-default indent-tabs-mode nil)
 
@@ -209,6 +189,11 @@
   (setq projectile-switch-project-action #'projectile-dired))
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
+
+;; don't display backup files 
+(setq counsel-find-file-ignore-regexp "\\~\\'")
+
+;; conda
 
 
 (use-package tramp
@@ -301,6 +286,9 @@
    (shell . t)))
 
 ;;; --- Org ---
+(setq org-directory "~/projects")
+(setq org-default-notes-file (concat org-directory "/notes.org"))
+
 
 (setq org-agenda-cmp-user-defined 'my/compare-todo-status)
 ;; Use org-tempo
@@ -320,49 +308,144 @@
                   ("emodule" . "src emacs-lisp :tangle emacs/modules/dw-MODULE.el")))
     (add-to-list 'org-structure-template-alist item)))
 
-;; keybindings
+
+
+
+;; --- keybindings ---
+;; Make ESC quit prompts
+(global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+
+; gptel
+(global-set-key (kbd "C-c s") #'gptel-send)
+(global-set-key (kbd "C-c g") #'gptel)
+
+; org
 (global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
 (global-set-key (kbd "C-c t") #'my/org-todo-list-swiper)
+(global-set-key (kbd "C-c r") #'my/org-read-list-swiper)
 (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
 
-(setq org-deadline-warning-days 1)
-(setq org-tag-alist
-      '(;; Places
-	(:startgroup . nil)
-        ("@home" . ?H)
-        ("@work" . ?W)
-(:endgroup . nil)
-        ;; Devices
-	(:startgroup . nil)
-        ("@computer" . ?C)
-        ("@book" . ?B)
-	("@paper" . ?P)
-(:endgroup . nil)
-        ;; Activities
-	(:startgroup . nil)
-        ("@thinking" . ?T)
-        ("@programming" . ?p)
-        ("@writing" . ?w)
-        ("@creative" . ?c)
-        ("@reading" . ?r)
-        ("@discarded" . ?d)
-        (:endgroup . nil)
+;; disable arrow keys to learn real bindings faster
+(global-unset-key (kbd "<left>"))
+(global-unset-key (kbd "<right>"))
+(global-unset-key (kbd "<up>"))
+(global-unset-key (kbd "<down>"))
 
-        ))
+
+(setq org-deadline-warning-days 1)
+(setq org-use-fast-tag-selection t)
+
+(setq org-tag-alist '(
+  ("arch" . ?a)
+  ("arch_dataflow" . ?a)
+  ("arch_languages_compilers" . ?a)
+  ("arch_modeling" . ?a)
+  ("arch_tensor_accelerators" . ?a)
+  ("courses" . ?c)
+  ("courses_arch_170a" . ?c)
+  ("courses_cmu_advanced_database_systems_lectures" . ?c)
+  ("courses_ee_105" . ?c)
+  ("courses_ee_142" . ?c)
+  ("courses_ee_232" . ?c)
+  ("courses_ee_240b" . ?c)
+  ("courses_slavic_50" . ?c)
+  ("courses_ugba_191i" . ?c)
+  ("ic" . ?i)
+  ("ic_cad" . ?i)
+  ("ic_electronic_ic" . ?i)
+  ("ic_hyperscale" . ?i)
+  ("ic_hyperscale_smartnic" . ?i)
+  ("ic_isscc_2025" . ?i)
+  ("ic_photonic_ic" . ?i)
+  ("ic_rtl_simulation" . ?i)
+  ("ic_synthesis" . ?i)
+  ("misc" . ?m)
+  ("misc_bio" . ?m)
+  ("misc_compilers" . ?m)
+  ("misc_formal" . ?m)
+  ("misc_misc_arch" . ?m)
+  ("misc_misc_systems" . ?m)
+  ("misc_misc_talk_slides" . ?m)
+  ("misc_ml" . ?m)
+  ("misc_neuro" . ?m)
+  ("misc_phd_theses" . ?m)
+  ("misc_philosophy" . ?m)
+  ("misc_physics" . ?m)
+  ("misc_psych" . ?m)
+  ("references" . ?r)
+  ("references_datsheets" . ?r)
+  ("references_manuals" . ?r)
+  ("references_pdk_docs" . ?r)
+  ("references_reference_docs" . ?r)
+  ("references_specs" . ?r)
+  ("references_specs_errata" . ?r)
+  ("references_ta" . ?r)
+  ("references_ta_eecs_251b_ta_stuff" . ?r)
+  ("references_textbooks" . ?r)
+))
+
+
+
+;; org capture
+(setq org-capture-templates
+      '(("r" "Read a Book" entry
+         (file+headline "~/Documents/projects/capture.org" "Reading List")         
+         "* READ %^{Title} by %^{Author} %^g: \n Entered on %U\n  %?")
+        ("v" "Watch a Video" entry
+         (file+headline "~/Documents/projects/capture.org" "Watch List")
+         "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  Entered on %U\n  %?")
+      ("Z" "Read from Zotero" entry
+       (file+headline "~/Documents/projects/capture.org" "Reading List")
+         "%(my/zotero-latest-capture-string)")))
+       
+
+
+
+
+(setq org-refile-targets
+      (mapcar (lambda (file) (cons file '(:maxlevel . 3)))
+              (my/org-project-files)))
+
+(use-package zotxt
+  :ensure t
+  :after org
+  ;; :bind ("C-c z" . zotxt-cite)
+  :config
+  (require 'zotxt))
+
+;; org todo
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "WAIT(w@/!)" "|" "DONE(d!)" "CANCELED(c@)")))
+      '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(t)" "READ(t)" "|" "DONE(d!)" "CANCELED(c@)")))
+(setq org-todo-keyword-faces
+      '(("READ" . "dark green")
+        ("WATCH" . "dark blue")))
 (setq org-src-fontify-natively t)
 (use-package htmlize)
 (setq org-export-publishing-directory "./assets")
 
-(setq org-agenda-custom-coummands
+(setq org-agenda-custom-commands
       '(("d" "Daily Agenda"
-         ((agenda "" ((org-agenda-span 'day)))))))
+         ((agenda "" ((org-agenda-span 'day)))))
+      ("r" "Read/Watch List"
+         todo "READ|WATCH"
+         ((org-agenda-overriding-header "Things to Read or Watch")))
+      ))
+
 (use-package ox-reveal)
+
+;; --- Conda ---
+(use-package conda)
+(conda-env-initialize-interactive-shells)
+;; if you want eshell support, include:
+(conda-env-initialize-eshell)
+
+
 ;;; ----- Dired -----
+
+
 
 (defun dw/dired-mode-hook ()
   (interactive)
@@ -375,14 +458,14 @@
               ("b" . dired-up-directory))
   :config
   (setq dired-listing-switches "-alv"
-        dired-omit-files "^\\.[^.].*"
+        dired-omit-files "^\\..*~?$"
         dired-omit-verbose nil
         dired-dwim-target 'dired-dwim-target-next
         dired-hide-details-hide-symlink-targets nil
         dired-kill-when-opening-new-dired-buffer t
-        delete-by-moving-to-trash t)
+        delete-by-moving-to-trash t))
 
-  (add-hook 'dired-mode-hook #'dw/dired-mode-hook))
+(add-hook 'dired-mode-hook 'dired-omit-mode)
 
 ;; Make sure ripgrep is used everywhere
 (setq xref-search-program 'ripgrep
