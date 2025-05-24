@@ -111,10 +111,10 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
-(with-eval-after-load 'ivy
-  (push (cons #'swiper (cdr (assq t ivy-re-builders-alist)))
-        ivy-re-builders-alist)
-  (push (cons t #'ivy--regex-fuzzy) ivy-re-builders-alist))
+(setq ivy-re-builders-alist
+      '((swiper . ivy--regex-plus)
+        (t . ivy--regex-fuzzy))) ;; fuzzy remains default for other commands
+
 
 (use-package orderless
   :ensure t
@@ -396,12 +396,10 @@
         ("v" "Watch a Video" entry
          (file+headline "~/Documents/projects/capture.org" "Watch List")
          "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  Entered on %U\n  %?")
-      ("Z" "Read from Zotero" entry
-       (file+headline "~/Documents/projects/capture.org" "Reading List")
-         "%(my/zotero-latest-capture-string)")))
-       
-
-
+        ("Z" "Read from Zotero" entry
+         (file+headline "~/Documents/projects/capture.org" "Reading List")
+         "* READ %(my/zotero-latest-capture-string)Entered on %U\n  %?")))
+         ;; "%(my/zotero-latest-capture-string)\nEntered on %U\n")))
 
 
 (setq org-refile-targets

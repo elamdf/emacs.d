@@ -123,6 +123,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 
 
 (defun my/zotero-latest-capture-string ()
+
   "Return an Org entry string with title, authors, and tag from the most recently added Zotero item."
   (let* ((query
           "SELECT title.value AS title, \
@@ -136,19 +137,23 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
            LEFT JOIN creators ON itemCreators.creatorID = creators.creatorID \
            LEFT JOIN collectionItems AS ci ON ci.itemID = items.itemID \
            LEFT JOIN collections AS c ON c.collectionID = ci.collectionID \
-           WHERE fields.fieldName = 'title' \
+           WHERE fields.fieldName = 'title' AND items.itemTypeID != 3 \
            GROUP BY items.itemID \
            ORDER BY items.dateAdded DESC \
            LIMIT 1;")
          (cmd (format "sqlite3 -readonly -separator '|' ~/Zotero/zotero.sqlite \"%s\"" query))
          (raw (shell-command-to-string cmd)))
-    (when (string-match "\\(.*?\\)|\\(.*?\\)|\\(.*\\)" raw)
-      (let ((title (string-trim (match-string 1 raw)))
-            (authors (string-trim (match-string 2 raw)))
-            (tag (->> (string-trim (match-string 3 raw))
-                      (replace-regexp-in-string " " "_" )
-                      (replace-regexp-in-string "/" "_" ))))
-        (format "* READ %s by %s :%s:\nEntered on %%U\n%%?"
-                title authors tag)))))
+        (message "Raw output: %S" raw)  ;; debug output
+
+    (if (string-match "\\(.*?\\)|\\(.*?\\)|\\(.*\\)" raw)
+        (let* ((title (string-trim (match-string 1 raw)))
+               (authors (string-trim (match-string 2 raw)))
+               (tag-path (string-trim (match-string 3 raw)))
+               (tag (->> tag-path
+                         (replace-regexp-in-string " " "_")
+                         (replace-regexp-in-string "/" "_"))))
+          (format "%s by %s :%s:\n" title authors tag))
+      "[No Zotero item found] \nqq%?")))
+
 
 (provide 'user)
