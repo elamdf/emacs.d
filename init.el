@@ -15,9 +15,27 @@
 
 ;; user funcs
 (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
+(add-to-list 'load-path (concat user-emacs-directory "/inline-cr"))
 
 (require 'user)
+(require 'inline-cr)
 
+
+(defvar bootstrap-version)
+(let ((bootstrap-file
+       (expand-file-name
+        "straight/repos/straight.el/bootstrap.el"
+        (or (bound-and-true-p straight-base-dir)
+            user-emacs-directory)))
+      (bootstrap-version 7))
+  (unless (file-exists-p bootstrap-file)
+    (with-current-buffer
+        (url-retrieve-synchronously
+         "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+         'silent 'inhibit-cookies)
+      (goto-char (point-max))
+      (eval-print-last-sexp)))
+  (load bootstrap-file nil 'nomessage));; install elpaca
 
 
 ;; Initialize package sources
@@ -39,6 +57,7 @@
 
 (require 'use-package)
 (setq use-package-always-ensure t)
+(setq package-install-upgrade-built-in t)
 
 (column-number-mode)
 (which-key-mode)
@@ -66,8 +85,7 @@
  '(org-agenda-files
    '("/Users/elamdf/Documents/projects/motifs.org"
      "/Users/elamdf/Documents/projects/ofot.org"
-     "/Users/elamdf/Documents/projects/papers.org"
-     "/Users/elamdf/Documents/projects/capture.org"     
+     "/Users/elamdf/Documents/projects/capture.org"
      "/Users/elamdf/Documents/projects/apl_photonics.org"))
  '(org-agenda-sorting-strategy
    '((agenda user-defined-up) (todo urgency-down category-keep)
@@ -84,13 +102,17 @@
                       yaml-mode yasnippet yasnippet-snippets zotxt))
  '(projectile-global-ignore-file-patterns '("\\#*"))
  '(projectile-indexing-method 'alien)
- '(projectile-project-search-path '(list ("~/bwrc" . 1) ("~/Documents" . 1))))
+ '(projectile-project-search-path '(list ("~/bwrc" . 1) ("~/Documents" . 1)))
+ '(safe-local-variable-values
+   '((org-export-initial-scope . buffer) (eval require 'org-make-toc))))
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+(when (daemonp)
+  (exec-path-from-shell-initialize))
 
 (use-package company)
 
@@ -111,9 +133,12 @@
          ("C-d" . ivy-reverse-i-search-kill))
   :config
   (ivy-mode 1))
+
+;; TODO: make regex p the default for all search, I don't want fuzzy
 (setq ivy-re-builders-alist
-      '((swiper . ivy--regex-plus)
-        (t . ivy--regex-fuzzy))) ;; fuzzy remains default for other commands
+        '((t . ivy--regex-ignore-order))) ;; fuzzy remains default for other commands
+
+
 
 
 (use-package orderless
@@ -223,9 +248,18 @@
   )
 
 (setq tramp-default-remote-shell "/bin/bash")
+
 (use-package magit
   :commands magit-status)
 
+(use-package forge
+  :after magit
+  )
+(use-package pr-review
+  :after magit
+  )
+
+(setq auth-sources '("~/.authinfo"))
 
 (use-package lsp-mode
   :commands (lsp lsp-deferred)
@@ -268,6 +302,11 @@
   ;; which is mapped to `keyword' face.
   (lsp-metals-enable-semantic-highlighting t)
   :hook (scala-mode . lsp))
+
+
+;; -- calyx --
+(use-package calyx-mode
+  :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
 
 ;;; ----- Essential Org Mode Configuration -----
 
@@ -314,17 +353,20 @@
 ;; --- keybindings ---
 ;; Make ESC quit prompts
 (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+(global-set-key (kbd "C-c ;") #'replace-regexp)
+
 
 ; gptel
-(global-set-key (kbd "C-c s") #'gptel-send)
+(global-set-key (kbd "C-c s") #'gptel-menu)
 (global-set-key (kbd "C-c g") #'gptel)
 
 ; org
 (global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "C-c t") #'my/org-todo-list-swiper)
-(global-set-key (kbd "C-c r") #'my/org-read-list-swiper)
+(global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
+;; (global-set-key (kbd "C-c t") #'my/org-todo-list)
+;; (global-set-key (kbd "C-c r") (lambda () (interactive) (org-todo-list "READ|WATCH")))
 (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
 
 ;; disable arrow keys to learn real bindings faster
@@ -416,7 +458,7 @@
 ;; org todo
 
 (setq org-todo-keywords
-      '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(t)" "READ(t)" "|" "DONE(d!)" "CANCELED(c@)")))
+      '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
 (setq org-todo-keyword-faces
       '(("READ" . "dark green")
         ("WATCH" . "dark blue")))
@@ -431,6 +473,7 @@
          todo "READ|WATCH"
          ((org-agenda-overriding-header "Things to Read or Watch")))
       ))
+
 
 (use-package ox-reveal)
 
@@ -520,3 +563,5 @@
     (advice-add sym :before #'my/ensure-ollama-running)))
 
 (my/advise-gptel-commands)
+
+

@@ -2,21 +2,6 @@
 ;; global defs
 (defvar my/org-projects-dir "~/Documents/projects/")
 
-;; org stuff
-(defun my/org-todo-list-swiper ()
-  "Open `org-todo-list` and start `swiper` in its buffer."
-  (interactive)
-  (let ((buf (get-buffer-create "*Org Agenda*")))
-    ;; Generate the global todo list
-    (org-todo-list)
-    ;; Wait for the agenda buffer to be displayed
-    (with-current-buffer buf
-      (while (not (get-buffer-window buf))
-        (sit-for 0.05)))
-    ;; Switch to that window and run swiper
-    (select-window (get-buffer-window buf))
-    (swiper)))
-
 
 (defun my/compare-todo-status (a b)
   "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
@@ -157,3 +142,5 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 
 
 (provide 'user)
+
+
