@@ -1,0 +1,3 @@
+[submodule "inline-cr"]
+	path = inline-cr
+	url = git@github.com:elamdf/inline-cr.git
