@@ -1,7 +1,7 @@
 (setq inhibit-startup-message t)
 
 (when (display-graphic-p)
-
+(setq visible-bell t)
 (scroll-bar-mode -1) ; no visual scrolbar
 (tool-bar-mode -1) ; disable toolbar
 (tooltip-mode -1) ; no tooltips
@@ -15,10 +15,12 @@
 
 ;; user funcs
 (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
-(add-to-list 'load-path (concat user-emacs-directory "/inline-cr"))
+(add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
 
 (require 'user)
-(require 'inline-cr)
+
+(require 'bismuth)
+(require 'brain-mode)
 
 
 (defvar bootstrap-version)
@@ -62,7 +64,9 @@
 (column-number-mode)
 (which-key-mode)
 (global-display-line-numbers-mode t)
-(setq display-line-numbers 'relative) 
+(setq display-line-numbers 'relative)
+(setq switch-to-buffer-obey-display-actions t)
+
 
 (use-package command-log-mode)
 
@@ -200,8 +204,15 @@
   :ensure t
   :mode ("README\\.md\\'" . gfm-mode)
   :init (setq markdown-command "multimarkdown")
+
   :bind (:map markdown-mode-map
-         ("C-c C-e" . markdown-do)))
+              ("C-c C-e" . markdown-do)))
+
+(defun my/markdown-comment-tweak ()
+  (setq-local comment-start nil))
+
+(eval-after-load "markdown"
+  (add-hook 'markdown-mode-hook #'my/markdown-comment-tweak))
 
 (use-package projectile
   :diminish projectile-mode
@@ -364,10 +375,11 @@
 (global-set-key (kbd "C-c l") #'org-store-link)
 (global-set-key (kbd "C-c a") #'org-agenda)
 (global-set-key (kbd "C-c c") #'org-capture)
-(global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
-;; (global-set-key (kbd "C-c t") #'my/org-todo-list)
-;; (global-set-key (kbd "C-c r") (lambda () (interactive) (org-todo-list "READ|WATCH")))
 (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
+;; bismuth
+(global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
+
+
 
 ;; disable arrow keys to learn real bindings faster
 (global-unset-key (kbd "<left>"))
@@ -565,3 +577,11 @@
 (my/advise-gptel-commands)
 
 
+;; bismuth
+;; enable inline comments by default for some filetypes
+;;;###autoload
+(add-hook 'markdown-mode-hook #'inline-cr-mode)
+;;;###autoload
+(add-hook 'org-mode-hook #'inline-cr-mode)
+;;;###autoload
+(add-hook 'c-mode-hook #'inline-cr-mode)

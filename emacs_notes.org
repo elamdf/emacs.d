@@ -1,6 +1,5 @@
 * Elam's `emacs` notes
 
-
 ** Kill Ring
 
 
