@@ -2,6 +2,7 @@
 
 (when (display-graphic-p)
 
+(setq split-width-threshold 1) ; vertical split by default  
 (scroll-bar-mode -1) ; no visual scrolbar
 (tool-bar-mode -1) ; disable toolbar
 (tooltip-mode -1) ; no tooltips
