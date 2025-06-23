@@ -21,8 +21,8 @@
 
 (require 'user)
 
-(require 'bismuth)
-(require 'brain-mode)
+(require 'inline-cr)
+(require 'brain)
 
 
 (defvar bootstrap-version)
