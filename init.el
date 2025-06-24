@@ -470,7 +470,7 @@
         ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
          "* %U %i %?" :empty-lines-after 1)
 
-        ("q" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+        ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
          "* %U \"%i%?\"" :empty-lines-after 1)
 
         ("Z" "Read from Zotero" entry
