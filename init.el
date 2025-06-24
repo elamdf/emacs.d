@@ -687,8 +687,8 @@
 ;;       '("https://semianalysis.substack.com/feed"
 ;;         "https://irreal.org/blog/&feed=rss2"))
 (setq elfeed-feeds
-      '("http://nullprogram.com/feed/"
-        "https://people.csail.mit.edu/rachit/post/atom.xml"
+
+        '("https://people.csail.mit.edu/rachit/post/atom.xml"
         "https://semianalysis.com/feed/"
         "https://irreal.org/blog/?feed=rss2"
         ))
