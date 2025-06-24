@@ -1,3 +1,6 @@
 [submodule "inline-cr"]
 	path = bismuth
 	url = git@github.com:elamdf/inline-cr.git
+[submodule "yasnippet-snippets"]
+	path = yasnippet-snippets
+	url = git@github.com:elamdf/yasnippet-snippets.git

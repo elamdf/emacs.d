@@ -1,0 +1,2 @@
+#!/usr/bin/env bash
+emacsclient -n -a "" --eval "(progn (raise-frame) (org-capture))"
