@@ -587,3 +587,19 @@
 (add-hook 'org-mode-hook #'inline-cr-mode)
 ;;;###autoload
 (add-hook 'c-mode-hook #'inline-cr-mode)
+
+;; RSS
+(use-package elfeed)
+(global-set-key (kbd "C-x w w") 'elfeed)
+;; Somewhere in your .emacs file
+(setq elfeed-feeds
+      '("https://semianalysis.substack.com/feed"
+        "https://irreal.org/blog/&feed=rss2"))
+;; email
+
+;; (use-package notmuch) ; use notmuch to view them
+;; (use-package mbsync) ; use mbsync to fetch emails
+
+;;                                         ; TODO https://kb.mit.edu/confluence/display/mitcontrib/Configure+Thunderbird+for+use+with+MIT+Microsoft+365+Mailboxes
+;; ; need to use
+; TODO figure out how to get STMP working on mit email 
