@@ -1,9 +1,10 @@
 (setq inhibit-startup-message t)
+(shell-command "git submodule update --init")
 
 (when (display-graphic-p)
 
 (setq visible-bell t) ; I hate hearing this bell
-(setq split-width-threshold 1) ; vertical split by default  
+(setq split-width-threshold 1) ; vertical split by default
 (scroll-bar-mode -1) ; no visual scrolbar
 (tool-bar-mode -1) ; disable toolbar
 (tooltip-mode -1) ; no tooltips
@@ -14,15 +15,14 @@
 )
 
 
+;; TODO more robust
+(load (concat user-emacs-directory "elam-personal-mac.el"))
 
 ;; user funcs
 (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
 (add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
 
 (require 'user)
-
-(require 'inline-cr)
-(require 'brain)
 
 
 (defvar bootstrap-version)
@@ -63,14 +63,20 @@
 (setq use-package-always-ensure t)
 (setq package-install-upgrade-built-in t)
 
+;; reasonable things
 (column-number-mode)
 (which-key-mode)
 (global-display-line-numbers-mode t)
 (setq display-line-numbers 'relative)
 (setq switch-to-buffer-obey-display-actions t)
+(add-hook 'before-save-hook #'delete-trailing-whitespace)
 
 
 (use-package command-log-mode)
+
+
+
+
 
 ;; Disable line numbers for some modes
 (dolist (mode '(org-mode-hook
@@ -89,10 +95,12 @@
    '(("x" "Describe command here" tags "" nil)
      ("d" "Daily Agenda" ((agenda "" ((org-agenda-span 'day)))) nil)))
  '(org-agenda-files
-   '("/Users/elamdf/Documents/projects/motifs.org"
-     "/Users/elamdf/Documents/projects/ofot.org"
-     "/Users/elamdf/Documents/projects/capture.org"
-     "/Users/elamdf/Documents/projects/apl_photonics.org"))
+         (mapcar (lambda (f) (expand-file-name f projects-dir))
+              '("motifs.org"
+                "ofot.org"
+                "notes.org"
+                "capture.org"
+                "apl_photonics.org")))
  '(org-agenda-sorting-strategy
    '((agenda user-defined-up) (todo urgency-down category-keep)
      (tags urgency-down category-keep) (search category-keep)))
@@ -126,7 +134,7 @@
   :diminish
   :bind (("C-s" . swiper)
          :map ivy-minibuffer-map
-         ("TAB" . ivy-alt-done)	
+         ("TAB" . ivy-alt-done)
          ("C-l" . ivy-alt-done)
          ("C-j" . ivy-next-line)
          ("C-k" . ivy-previous-line)
@@ -228,7 +236,7 @@
 (use-package counsel-projectile
   :config (counsel-projectile-mode))
 
-;; don't display backup files 
+;; don't display backup files
 (setq counsel-find-file-ignore-regexp "\\~\\'")
 
 ;; conda
@@ -338,7 +346,7 @@
    (shell . t)))
 
 ;;; --- Org ---
-(setq org-directory "~/projects")
+(setq org-directory projects-dir)
 (setq org-default-notes-file (concat org-directory "/notes.org"))
 
 
@@ -446,14 +454,27 @@
 
 ;; org capture
 (setq org-capture-templates
-      '(("r" "Read a Book" entry
-         (file+headline "~/Documents/projects/capture.org" "Reading List")         
+      '(("r" "Read" entry
+         (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
          "* READ %^{Title} by %^{Author} %^g: \n Entered on %U\n  %?")
-        ("v" "Watch a Video" entry
-         (file+headline "~/Documents/projects/capture.org" "Watch List")
+
+        ("w" "Watch" entry
+                 (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+         ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
+
          "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  Entered on %U\n  %?")
+
+        ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+         "* %U %i %?" :empty-lines-after 1)
+
+        ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+         "* %U %i %?" :empty-lines-after 1)
+
+        ("q" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+         "* %U \"%i%?\"" :empty-lines-after 1)
+
         ("Z" "Read from Zotero" entry
-         (file+headline "~/Documents/projects/capture.org" "Reading List")
+         (file+headline (lambda () (expand-file-name "capture.org" projects-dir)) "Reading List")
          "* READ %(my/zotero-latest-capture-string)Entered on %U\n  %?")))
          ;; "%(my/zotero-latest-capture-string)\nEntered on %U\n")))
 
@@ -534,8 +555,7 @@
           conf-mode
           snippet-mode) . yas-minor-mode-on)
   :init
-  (setq yas-snippet-dirs '("~/.emacs.d/snippets/org-mode" "~/.emacs.d/yasnippet-snippets/snippets")))
-(use-package yasnippet-snippets)
+  (setq yas-snippet-dirs (list (concat user-emacs-directory "/yasnippet-snippets/snippets"))))
 (yas-global-mode)
 
 
@@ -551,19 +571,18 @@
   (remove-hook 'post-command-hook 'yas/field-skip-once 'local))
 (put 'list-timers 'disabled nil)
 
-;; meeting notes templating
-
+; fun quote
 (add-hook 'find-file-hook #'my/show-random-org-quote)
 
 ;; gptel for local llm
 (use-package gptel)
 
 (setq
- gptel-model 'gemma3:4b
- gptel-backend (gptel-make-ollama "Gemma 3 4B"
+ gptel-model 'qwen3:4b
+ gptel-backend (gptel-make-ollama "Qwen 3 4B"
                  :host "localhost:11434"
                  :stream t
-                 :models '(gemma3:4b)))
+                 :models '(qwen3:4b)))
 
 (add-hook 'gptel-post-response-functions 'gptel-end-of-response)
 (add-hook 'gptel-before-send-hook #'my/ensure-ollama-running)
@@ -578,8 +597,80 @@
 
 (my/advise-gptel-commands)
 
+;; elisa for RAG stuff
+(use-package ellama)
+;; (use-package elisa
+;;   :init
+;;   (setopt elisa-limit 5)
+;;   ;; reranker increases answer quality significantly
+;;   (setopt elisa-reranker-enabled t)
+;;   ;; prompt rewriting may increase quality of answers
+;;   ;; disable it if you want direct control over prompt
+;;   (setopt elisa-prompt-rewriting-enabled t)
+;;   (require 'llm-ollama)
+;;   ;; gemma 2 works very good in my use cases
+;;   ;; it also boasts strong multilingual capabilities
+;;   ;; (setopt elisa-chat-provider
+;;   ;; 	  (make-llm-ollama
+;;   ;; 	   :chat-model "gemma2:9b-instruct-q6_K"
+;;   ;; 	   :embedding-model "snowflake-arctic-embed2"
+;;   ;; 	   ;; set context window to 8k
+;;   ;; 	   :default-chat-non-standard-params '(("num_ctx" . 8192))))
+;;   ;;
+;;   ;; qwen 2.5 3b works good in my test cases and provide longer context
+;;   (setopt elisa-chat-provider
+;; 	  (make-llm-ollama
+;; 	   :chat-model "qwen3:4b"
+;; 	   :embedding-model "snowflake-arctic-embed2"
+;; 	   :default-chat-temperature 0.1
+;; 	   :default-chat-non-standard-params '(("num_ctx" . 32768))))
+;;   ;; this embedding model has stong multilingual capabilities
+;;   (setopt elisa-embeddings-provider (make-llm-ollama :embedding-model "snowflake-arctic-embed2"))
+;;   ;; enable batch embeddings for faster processing
+;;   (setopt elisa-batch-embeddings-enabled t)
+;;   :config
+;;   ;; searxng works better than duckduckgo in my tests
+;;   (setopt elisa-web-search-function 'elisa-search-searxng))
+
+
+;; (defun +elisa--collection-exists-p (name)
+;;   "Return non-nil when an ELISA collection NAME already exists.
+;; Falls back to a naive DB check if running on an older ELISA
+;; snapshot that lacks the public helper."
+;;   (cond
+;;    ;; Newer ELISA exposes a helper:
+;;    ((fboundp 'elisa-collection-exists-p)
+;;     (elisa-collection-exists-p name))
+;;    ;; Otherwise query the SQLite DB directly (silently ignores
+;;    ;; errors if the schema/table is missing – safest for hook use).
+;;    (t
+;;     (ignore-errors
+;;       (let* ((db (elisa--db-open))
+;;              (rows (sqlite-select
+;;                     db
+;;                     "select 1 from collections where name = ? limit 1"
+;;                     (list name))))
+;;         rows)))))
+
+;; (defun +elisa--maybe-init-and-parse ()
+;;   "Ensure the current Projectile project has an indexed ELISA collection."
+;;   (when-let* ((root (projectile-project-root))         ; nil outside projects
+;;               (name root))                             ; use full path as key
+;;     ;; Create the collection once, then keep incrementally reparsing.
+;;     (unless (+elisa--collection-exists-p name)
+;;       (elisa-create-empty-collection name))            ; idempotent
+;;     (elisa-async-parse-directory root)                 ; incremental
+;;     (add-to-list 'elisa-enabled-collections name)))
+
+;; ;; Run the helper every time we jump to a different project.
+;; (add-hook 'projectile-after-switch-project-hook #'+elisa--maybe-init-and-parse)
+
 
 ;; bismuth
+(require 'inline-cr)
+(require 'brain)
+
+
 ;; enable inline comments by default for some filetypes
 ;;;###autoload
 (add-hook 'markdown-mode-hook #'inline-cr-mode)
@@ -592,14 +683,12 @@
 (use-package elfeed)
 (global-set-key (kbd "C-x w w") 'elfeed)
 ;; Somewhere in your .emacs file
+;; (setq elfeed-feeds
+;;       '("https://semianalysis.substack.com/feed"
+;;         "https://irreal.org/blog/&feed=rss2"))
 (setq elfeed-feeds
-      '("https://semianalysis.substack.com/feed"
-        "https://irreal.org/blog/&feed=rss2"))
-;; email
-
-;; (use-package notmuch) ; use notmuch to view them
-;; (use-package mbsync) ; use mbsync to fetch emails
-
-;;                                         ; TODO https://kb.mit.edu/confluence/display/mitcontrib/Configure+Thunderbird+for+use+with+MIT+Microsoft+365+Mailboxes
-;; ; need to use
-; TODO figure out how to get STMP working on mit email 
+      '("http://nullprogram.com/feed/"
+        "https://people.csail.mit.edu/rachit/post/atom.xml"
+        "https://semianalysis.com/feed/"
+        "https://irreal.org/blog/?feed=rss2"
+        ))
