@@ -1,0 +1,6 @@
+[submodule "bismuth"]
+	path = bismuth
+	url = https://github.com/elamdf/bismuth.git
+[submodule "yasnippet-snippets"]
+	path = yasnippet-snippets
+	url = https://github.com/elamdf/yasnippet-snippets.git
