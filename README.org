@@ -1,0 +1,326 @@
+#+TITLE: Elam's =emacs= Configuration
+#+AUTHOR: Elam Day-Friedland
+
+* Startup & UI Basics
+#+BEGIN_SRC emacs-lisp
+  (setq inhibit-startup-message t)
+  (shell-command "git submodule update --init")
+  (when (display-graphic-p)
+
+    (setq visible-bell t)                 ; no audible bell
+    (setq split-width-threshold 1)        ; prefer vertical splits
+    (scroll-bar-mode -1)                  ; hide scroll bar
+    (tool-bar-mode   -1)                  ; hide toolbar
+    (tooltip-mode   -1)                   ; hide tooltips
+    (set-fringe-mode 10)                  ; extra margin
+    (menu-bar-mode   -1)                  ; hide menu bar
+    (set-face-attribute 'default nil \:font "Fira Code Retina" \:height 140)
+    (load-theme 'tango-dark))
+#+END_SRC
+* Personal Modules & Paths
+#+BEGIN_SRC emacs-lisp
+  ;; Load personal machine‑specific tweaks
+  (load (concat user-emacs-directory "elam-personal-mac.el"))
+  ;; Private libraries
+  (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
+  (add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
+  (require 'user)                         ; personal helpers
+#+END_SRC
+* Package Management
+#+BEGIN_SRC emacs-lisp
+  (defvar bootstrap-version)
+  (let\* ((bootstrap-file (expand-file-name "straight/repos/straight.el/bootstrap.el"
+                                            (or (bound-and-true-p straight-base-dir)
+                                                user-emacs-directory)))
+          (bootstrap-version 7))
+         (unless (file-exists-p bootstrap-file)
+           (with-current-buffer
+               (url-retrieve-synchronously
+                "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+                'silent 'inhibit-cookies)
+             (goto-char (point-max))
+             (eval-print-last-sexp)))
+         (load bootstrap-file nil 'nomessage))
+  (require 'package)
+  (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+                           ("org"   . "https://orgmode.org/elpa/")
+                           ("elpa"  . "https://elpa.gnu.org/packages/")))
+  (package-initialize)
+  (unless package-archive-contents (package-refresh-contents))
+  (load-library "server")
+  (unless (server-running-p) (server-start))
+  (unless (package-installed-p 'use-package) (package-install 'use-package))
+  (require 'use-package)
+  (setq use-package-always-ensure t
+        package-install-upgrade-built-in t)
+#+END_SRC
+* Core Editor Defaults
+#+BEGIN_SRC emacs-lisp
+  (column-number-mode)
+  (which-key-mode)
+  (global-display-line-numbers-mode t)
+  (setq display-line-numbers 'relative)
+  (setq switch-to-buffer-obey-display-actions t)
+  (add-hook 'before-save-hook #'delete-trailing-whitespace)
+  (use-package command-log-mode)
+  ;; Disable line numbers where they get in the way
+  (dolist (hook '(org-mode-hook term-mode-hook shell-mode-hook treemacs-mode-hook eshell-mode-hook))
+    (add-hook hook (lambda () (display-line-numbers-mode 0))))
+#+END_SRC
+* UI, Completion & Navigation
+#+BEGIN_SRC emacs-lisp
+  (use-package company)
+  (use-package ivy
+    \:diminish
+    \:bind (("C-s" . swiper)
+            \:map ivy-minibuffer-map
+            ("TAB" . ivy-alt-done)
+            ("C-l" . ivy-alt-done)
+            ("C-j" . ivy-next-line)
+            ("C-k" . ivy-previous-line)
+            \:map ivy-switch-buffer-map
+            ("C-k" . ivy-previous-line)
+            ("C-l" . ivy-done)
+            ("C-d" . ivy-switch-buffer-kill)
+            \:map ivy-reverse-i-search-map
+            ("C-k" . ivy-previous-line)
+            ("C-d" . ivy-reverse-i-search-kill))
+    \:config (ivy-mode 1))
+  (setq ivy-re-builders-alist '((t . ivy--regex-ignore-order))) ; literal‑ish search
+  (use-package orderless
+    \:custom
+    (completion-styles '(orderless basic))
+    (completion-category-overrides '((file (styles basic partial-completion)))))
+  (use-package ivy-rich \:after ivy \:init (ivy-rich-mode 1))
+  (use-package counsel
+    \:bind (("C-M-j" . counsel-switch-buffer)
+            ("M-x"   . counsel-M-x)
+            ("C-x C-f" . counsel-find-file)
+            \:map minibuffer-local-map
+            ("C-r" . counsel-minibuffer-history))
+    \:custom (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
+    \:config (counsel-mode 1))
+  (use-package helpful
+    \:commands (helpful-callable helpful-variable helpful-command helpful-key)
+    \:custom
+    (counsel-describe-function-function #'helpful-callable)
+    (counsel-describe-variable-function #'helpful-variable)
+    \:bind
+    ([remap describe-function] . counsel-describe-function)
+  ([remap describe-command]  . helpful-command)
+  ([remap describe-variable] . counsel-describe-variable)
+  ([remap describe-key]      . helpful-key))
+  (use-package swiper)
+  (use-package doom-themes \:init (load-theme 'doom-palenight t))
+  (use-package doom-modeline \:init (doom-modeline-mode 1) \:custom ((doom-modeline-height 25)))
+  (setq mac-command-modifier 'meta)
+  (use-package rainbow-delimiters \:hook (prog-mode . rainbow-delimiters-mode))
+  (setq-default indent-tabs-mode nil)
+  (use-package markdown-mode
+    \:mode ("README\\.md\\'" . gfm-mode)
+    \:init (setq markdown-command "multimarkdown")
+    \:bind (\:map markdown-mode-map ("C-c C-e" . markdown-do)))
+  (defun my/markdown-comment-tweak ()
+    (setq-local comment-start nil))
+  (add-hook 'markdown-mode-hook #'my/markdown-comment-tweak)
+#+END_SRC
+* Project & Version Control
+#+BEGIN_SRC emacs-lisp
+  (use-package projectile
+    \:diminish projectile-mode
+    \:config (projectile-mode)
+    \:custom (projectile-completion-system 'ivy)
+    \:bind-keymap ("C-c p" . projectile-command-map)
+    \:init
+    (setq projectile-project-search-path '(list "~~/bwrc" "~~/Documents"))
+    (setq projectile-switch-project-action #'projectile-dired))
+  (use-package counsel-projectile \:after projectile \:config (counsel-projectile-mode))
+  (setq counsel-find-file-ignore-regexp "\\\~\\'")
+  (use-package magit \:commands magit-status)
+  (use-package forge \:after magit)
+  (use-package pr-review \:after magit)
+  (setq auth-sources '("\~/.authinfo"))
+#+END_SRC
+* Language & LSP Support
+#+BEGIN_SRC emacs-lisp
+  (use-package lsp-mode
+    \:commands (lsp lsp-deferred)
+    \:init   (setq lsp-keymap-prefix "C-c l")
+    \:config (lsp-enable-which-key-integration t))
+  (use-package lsp-ui \:commands lsp-ui-mode)
+  (add-hook 'python-mode-hook #'lsp-deferred)
+  (use-package tree-sitter)
+  (use-package tree-sitter-langs)
+  (use-package yaml-mode)
+  (require 'tree-sitter)
+  (require 'tree-sitter-langs)
+  (use-package rust-mode
+    \:mode "\\.rs\\'"
+    \:custom (rust-format-on-save t)
+    \:hook (rust-mode . lsp-deferred))
+  (use-package lsp-metals
+    \:custom
+    (lsp-metals-server-args
+     '("-J-Dmetals.allow-multiline-string-formatting=off"
+       "-J-Dmetals.icons=unicode"))
+    (lsp-metals-enable-semantic-highlighting t)
+    \:hook (scala-mode . lsp-deferred))
+#+END_SRC
+* Hardware & Calyx
+#+BEGIN_SRC emacs-lisp
+  (use-package calyx-mode
+    \:straight (calyx-mode \:host github \:repo "sgpthomas/calyx-mode"))
+#+END_SRC
+* Org Mode Configuration
+#+BEGIN_SRC emacs-lisp
+  (setq org-ellipsis " ▾"
+        org-startup-folded 'content
+        org-cycle-separator-lines 2
+        org-fontify-quote-and-verse-blocks t)
+  (add-hook 'org-mode-hook #'org-indent-mode)
+  (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
+  (setq org-directory projects-dir)
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  (use-package org-tempo \:ensure nil \:demand t)
+  (dolist (tpl '(("sh" . "src sh")
+                 ("el" . "src emacs-lisp")
+                 ("li" . "src lisp")
+                 ("sc" . "src scheme")
+                 ("ts" . "src typescript")
+                 ("py" . "src python")
+                 ("yaml" . "src yaml")
+                 ("json" . "src json")))
+    (add-to-list 'org-structure-template-alist tpl))
+  (setq org-deadline-warning-days 1
+        org-use-fast-tag-selection t)
+  (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
+  ;; Capture & Refile templates
+  (setq org-capture-templates
+        '(("r" "Read" entry (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "\* READ %^{Title} by %^{Author} %^g:\n  Entered on %U\n  %?")
+          ("w" "Watch" entry (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+           "\* WATCH %^{Title} %^g:\n  Link: %^{URL}\n  Entered on %U\n  %?")
+          ("t" "TODO" entry (file+olp (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+           "\* %U %i %?" \:empty-lines-after 1)))
+  (setq org-refile-targets (mapcar (lambda (f) (cons f '(\:maxlevel . 3))) (my/org-project-files)))
+  (use-package zotxt \:after org)
+  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" | "DONE(d!)" "CANCELED(c@)")))
+  (setq org-todo-keyword-faces '(("READ" . "dark green") ("WATCH" . "dark blue")))
+  (setq org-src-fontify-natively t)
+  (use-package htmlize)
+  (setq org-export-publishing-directory "./assets")
+  (use-package ox-reveal)
+#+END_SRC
+* Keybindings & Shortcuts
+#+BEGIN_SRC emacs-lisp
+  (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
+  (global-set-key (kbd "C-c ;")   #'replace-regexp)
+  ;; GPTel
+  (global-set-key (kbd "C-c s") #'gptel-menu)
+  (global-set-key (kbd "C-c g") #'gptel)
+  ;; Org
+  (global-set-key (kbd "C-c l") #'org-store-link)
+  (global-set-key (kbd "C-c a") #'org-agenda)
+  (global-set-key (kbd "C-c c") #'org-capture)
+  (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
+  ;; Bismuth
+  (global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
+  ;; Disable arrow keys – train muscle‑memory!
+  (dolist (k '("<left>" "<right>" "<up>" "<down>"))
+    (global-unset-key (kbd k)))
+#+END_SRC
+* Conda & Environment
+#+BEGIN_SRC emacs-lisp
+  (use-package conda)
+  (conda-env-initialize-interactive-shells)
+  (conda-env-initialize-eshell)
+#+END_SRC
+* Tramp & Remote Editing
+#+BEGIN_SRC emacs-lisp
+  (use-package tramp
+    \:defer t
+    \:custom
+    (tramp-default-method "ssh")
+    (tramp-default-remote-shell "/bin/bash")
+    (tramp-remote-path (append tramp-remote-path '(tramp-own-remote-path)))
+    \:config
+    (add-to-list 'tramp-default-proxies-alist '(nil "\\\`root\\'" "/ssh:%h:")))
+#+END_SRC
+* Dired & File Management
+#+BEGIN_SRC emacs-lisp
+  (defun dw/dired-mode-hook ()
+    (dired-hide-details-mode 1)
+    (hl-line-mode 1))
+  (use-package dired \:ensure nil
+    \:bind (\:map dired-mode-map ("b" . dired-up-directory))
+    \:config
+    (setq dired-listing-switches "-alv"
+          dired-omit-files "^\\..\*\~?\$"
+          dired-dwim-target 'dired-dwim-target-next
+          delete-by-moving-to-trash t))
+  (add-hook 'dired-mode-hook #'dw/dired-mode-hook)
+  (add-hook 'dired-mode-hook #'dired-omit-mode)
+  ;; Ripgrep everywhere
+  (setq xref-search-program 'ripgrep
+        grep-command "rg -nS --noheading")
+#+END_SRC
+* Snippets & Templates
+#+BEGIN_SRC emacs-lisp
+  (use-package yasnippet
+    \:hook ((text-mode prog-mode conf-mode snippet-mode) . yas-minor-mode)
+    \:init (setq yas-snippet-dirs (list (concat user-emacs-directory "/yasnippet-snippets/snippets"))))
+  (yas-global-mode)
+  ;; Auto‑jump out of snippets
+  (defun yas/field-skip-once ()
+    (ignore-errors (yas/next-field))
+    (remove-hook 'post-command-hook #'yas/field-skip-once 'local))
+  (defun yas/schedule-field-skip ()
+    (add-hook 'post-command-hook #'yas/field-skip-once 'append 'local))
+#+END_SRC
+* GPTel & Ollama Integration
+#+BEGIN_SRC emacs-lisp
+  (use-package gptel)
+  (setq gptel-model 'qwen3:4b
+        gptel-backend (gptel-make-ollama "Qwen 3 4B" \:host "localhost:11434" \:stream t \:models '(qwen3:4b)))
+  (add-hook 'gptel-post-response-functions #'gptel-end-of-response)
+  (add-hook 'gptel-before-send-hook       #'my/ensure-ollama-running)
+  (defun my/advise-gptel-commands ()
+    "Ensure Ollama is running before any \`gptel-' command."
+    (dolist (sym (apropos-internal "^gptel-" 'commandp))
+      (advice-add sym \:before #'my/ensure-ollama-running)))
+  (my/advise-gptel-commands)
+#+END_SRC
+* Inline‑CR & Brain Workflow
+#+BEGIN_SRC emacs-lisp
+  (require 'inline-cr)
+  (require 'brain)
+  ;; Enable inline‑cr in common writing modes
+  (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook))
+    (add-hook hook #'inline-cr-mode))
+#+END_SRC
+* RSS & Elfeed
+#+BEGIN_SRC emacs-lisp
+  (use-package elfeed)
+  (global-set-key (kbd "C-x w w") #'elfeed)
+  (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
+                       "https://semianalysis.com/feed/"
+                       "https://irreal.org/blog/?feed=rss2"))
+#+END_SRC
+* Miscellaneous
+#+BEGIN_SRC emacs-lisp
+  ;; Fun motivational quote when opening files
+  (add-hook 'find-file-hook #'my/show-random-org-quote)
+  ;; Allow 'list-timers' command
+  (put 'list-timers 'disabled nil)
+#+END_SRC
+* OS Config things
+on macos, invoke scripts/capture.sh by creating an automator script and binding it (under keyboard -> shortcuts -> services -> general)
+add to =~/.authinfo.gpg=
+#+begin_src
+machine <workspace>.slack.com  login token  password xoxc-…    # API token
+machine <workspace>.slack.com  login cookie password "xoxd-…; d-s=…; lc=…"  # full cookie header
+#+end_src
+
+
+* External dependencies I remember adding
+** TODO update this by doing an install from a fresh mac/windows machine
