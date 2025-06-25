@@ -107,9 +107,9 @@
     (counsel-describe-variable-function #'helpful-variable)
     \:bind
     ([remap describe-function] . counsel-describe-function)
-  ([remap describe-command]  . helpful-command)
-  ([remap describe-variable] . counsel-describe-variable)
-  ([remap describe-key]      . helpful-key))
+    ([remap describe-command]  . helpful-command)
+    ([remap describe-variable] . counsel-describe-variable)
+    ([remap describe-key]      . helpful-key))
   (use-package swiper)
   (use-package doom-themes \:init (load-theme 'doom-palenight t))
   (use-package doom-modeline \:init (doom-modeline-mode 1) \:custom ((doom-modeline-height 25)))
@@ -225,7 +225,11 @@
   (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
   ;; Bismuth
   (global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
-  ;; Disable arrow keys – train muscle‑memory!
+
+  ;; elfeed
+  (global-set-key (kbd "C-x w w") #'elfeed)
+
+  ;; Disable arrow keys
   (dolist (k '("<left>" "<right>" "<up>" "<down>"))
     (global-unset-key (kbd k)))
 #+END_SRC
@@ -290,18 +294,17 @@
       (advice-add sym \:before #'my/ensure-ollama-running)))
   (my/advise-gptel-commands)
 #+END_SRC
-* Inline‑CR & Brain Workflow
+* Bismuth Configuration
 #+BEGIN_SRC emacs-lisp
   (require 'inline-cr)
   (require 'brain)
-  ;; Enable inline‑cr in common writing modes
+  ;; Enable inline‑cr in common prose modes
   (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook))
     (add-hook hook #'inline-cr-mode))
 #+END_SRC
 * RSS & Elfeed
 #+BEGIN_SRC emacs-lisp
   (use-package elfeed)
-  (global-set-key (kbd "C-x w w") #'elfeed)
   (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
                        "https://semianalysis.com/feed/"
                        "https://irreal.org/blog/?feed=rss2"))
