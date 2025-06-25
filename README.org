@@ -195,16 +195,34 @@
         org-use-fast-tag-selection t)
   (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
   ;; Capture & Refile templates
+
   (setq org-capture-templates
-        '(("r" "Read" entry (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "\* READ %^{Title} by %^{Author} %^g:\n  Entered on %U\n  %?")
-          ("w" "Watch" entry (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
-           "\* WATCH %^{Title} %^g:\n  Link: %^{URL}\n  Entered on %U\n  %?")
-          ("t" "TODO" entry (file+olp (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
-           "\* %U %i %?" \:empty-lines-after 1)))
+        '(("r" "Read" entry
+           (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* READ %^{Title} by %^{Author} %^g: \n Entered on %U\n  %?")
+
+          ("w" "Watch" entry
+           (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+           ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
+
+           "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  Entered on %U\n  %?")
+
+          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+           "* %U %i %?" :empty-lines-after 1)
+
+          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+           "* %U %i %?" :empty-lines-after 1)
+
+          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+           "* %U \"%i%?\"" :empty-lines-after 1)
+          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+           "* READ %(my/zotero-latest-capture-string) Entered on %U\n %?" :empty-lines-after 1))
+        )
+  ;;
+
   (setq org-refile-targets (mapcar (lambda (f) (cons f '(\:maxlevel . 3))) (my/org-project-files)))
   (use-package zotxt \:after org)
-  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" | "DONE(d!)" "CANCELED(c@)")))
+  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
   (setq org-todo-keyword-faces '(("READ" . "dark green") ("WATCH" . "dark blue")))
   (setq org-src-fontify-natively t)
   (use-package htmlize)
