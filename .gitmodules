@@ -1,6 +1,6 @@
-[submodule "inline-cr"]
+[submodule "bismuth"]
 	path = bismuth
-	url = git@github.com:elamdf/inline-cr.git
+	url = https://github.com/elamdf/bismuth.git
 [submodule "yasnippet-snippets"]
 	path = yasnippet-snippets
-	url = git@github.com:elamdf/yasnippet-snippets.git
+	url = https://github.com/elamdf/yasnippet-snippets.git
