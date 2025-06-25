@@ -126,9 +126,8 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
            GROUP BY items.itemID \
            ORDER BY items.dateAdded DESC \
            LIMIT 1;")
-         (cmd (format "sqlite3 -readonly -separator '|' ~/Zotero/zotero.sqlite \"%s\"" query))
+         (cmd (format "sqlite3 -readonly -separator \"|\" ~/Zotero/zotero.sqlite \"%s\"" query))
          (raw (shell-command-to-string cmd)))
-        (message "Raw output: %S" raw)  ;; debug output
 
     (if (string-match "\\(.*?\\)|\\(.*?\\)|\\(.*\\)" raw)
         (let* ((title (string-trim (match-string 1 raw)))
@@ -137,10 +136,42 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                (tag (->> tag-path
                          (replace-regexp-in-string " " "_")
                          (replace-regexp-in-string "/" "_"))))
-          (format "%s by %s :%s:\n" title authors tag))
+          (format "%s %s :%s:" title (or (and (not (string-blank-p authors)) (format "by %s" authors)) "") tag))
       "[No Zotero item found] \nqq%?")))
 
 
+(defun hs-cycle (&optional level)
+  (interactive "p")
+  (let (message-log-max
+        (inhibit-message t))
+    (if (= level 1)
+        (pcase last-command
+          ('hs-cycle
+           (hs-hide-level 1)
+           (setq this-command 'hs-cycle-children))
+          ('hs-cycle-children
+           ;; TODO: Fix this case. `hs-show-block' needs to be
+           ;; called twice to open all folds of the parent
+           ;; block.
+           (save-excursion (hs-show-block))
+           (hs-show-block)
+           (setq this-command 'hs-cycle-subtree))
+          ('hs-cycle-subtree
+           (hs-hide-block))
+          (_
+           (if (not (hs-already-hidden-p))
+               (hs-hide-block)
+             (hs-hide-level 1)
+             (setq this-command 'hs-cycle-children))))
+      (hs-hide-level level)
+      (setq this-command 'hs-hide-level))))
+
+(defun hs-global-cycle ()
+    (interactive)
+    (pcase last-command
+      ('hs-global-cycle
+       (save-excursion (hs-show-all))
+       (setq this-command 'hs-global-show))
+      (_ (hs-hide-all))))
+
 (provide 'user)
-
-
