@@ -172,34 +172,52 @@
     \:straight (calyx-mode \:host github \:repo "sgpthomas/calyx-mode"))
 #+END_SRC
 * Org Mode Configuration
-#+BEGIN_SRC emacs-lisp
-  (setq org-ellipsis " ▾"
-        org-startup-folded 'content
-        org-cycle-separator-lines 2
-        org-fontify-quote-and-verse-blocks t)
-  (add-hook 'org-mode-hook #'org-indent-mode)
-  (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
-  (setq org-directory projects-dir)
-  (setq org-default-notes-file (concat org-directory "/notes.org"))
-  (use-package org-tempo \:ensure nil \:demand t)
-  (dolist (tpl '(("sh" . "src sh")
-                 ("el" . "src emacs-lisp")
-                 ("li" . "src lisp")
-                 ("sc" . "src scheme")
-                 ("ts" . "src typescript")
-                 ("py" . "src python")
-                 ("yaml" . "src yaml")
-                 ("json" . "src json")))
-    (add-to-list 'org-structure-template-alist tpl))
-  (setq org-deadline-warning-days 1
-        org-use-fast-tag-selection t)
-  (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
-  ;; Capture & Refile templates
 
+#+BEGIN_SRC emacs-lisp
+    (setq org-ellipsis " ▾"
+          org-startup-folded 'content
+          org-cycle-separator-lines 2
+          org-fontify-quote-and-verse-blocks t)
+    (add-hook 'org-mode-hook #'org-indent-mode)
+    (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
+    (setq org-directory projects-dir)
+    (setq org-default-notes-file (concat org-directory "/notes.org"))
+    (use-package org-tempo \:ensure nil \:demand t)
+    (dolist (tpl '(("sh" . "src sh")
+                   ("el" . "src emacs-lisp")
+                   ("li" . "src lisp")
+                   ("sc" . "src scheme")
+                   ("ts" . "src typescript")
+                   ("py" . "src python")
+                   ("yaml" . "src yaml")
+                   ("json" . "src json")))
+      (add-to-list 'org-structure-template-alist tpl))
+    (setq org-deadline-warning-days 1
+          org-use-fast-tag-selection t)
+    (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
+    ;; Capture & Refile templates
+
+
+  (use-package fold-and-focus
+    :demand t
+    :straight (fold-and-focus :type git :host nil :repo
+             "https://git.sr.ht/~flandrew/fold-and-focus")
+    :config
+    (global-fold-and-focus-org-mode)
+    (global-fold-and-focus-md-mode)
+    (global-fold-and-focus-el-mode))
+
+  #+end_src
+
+  #+RESULTS:
+
+Capture bindings
+    #+begin_src emacs-lisp
   (setq org-capture-templates
         '(("r" "Read" entry
            (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
            "* READ %^{Title} by %^{Author} %^g: \n Entered on %U\n  %?")
+
 
           ("w" "Watch" entry
            (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
@@ -208,7 +226,7 @@
            "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  Entered on %U\n  %?")
 
           ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
-           "* %U %i %?" :empty-lines-after 1)
+           "* TODO %U %i %?" :empty-lines-after 1)
 
           ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
            "* %U %i %?" :empty-lines-after 1)
@@ -219,6 +237,13 @@
            "* READ %(my/zotero-latest-capture-string) Entered on %U\n %?" :empty-lines-after 1))
         )
   ;;
+  (setq org-agenda-sorting-strategy
+        '((agenda user-defined-up) (todo user-defined-up)
+          (tags urgency-down category-keep) (search category-keep))
+        )
+  (setq org-agenda-cmp-user-defined 'my/compare-todo-status)
+
+
 
   (setq org-refile-targets (mapcar (lambda (f) (cons f '(\:maxlevel . 3))) (my/org-project-files)))
   (use-package zotxt \:after org)
