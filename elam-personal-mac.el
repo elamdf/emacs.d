@@ -44,7 +44,7 @@
      :token (auth-source-pick-first-password
               :host "mit.slack.com" :user "token" :max 1)
      :cookie (auth-source-pick-first-password
-                 :host "mit.slack.com" :user "cookie" :max 1)     
+                 :host "mit.slack.com" :user "cookie" :max 1)
      :full-and-display-names t
      :default t
      :subscribed-channels nil ;; using slack-extra-subscribed-channels because I can change it dynamically
@@ -91,4 +91,6 @@
 
 ;;                                         ; TODO https://kb.mit.edu/confluence/display/mitcontrib/Configure+Thunderbird+for+use+with+MIT+Microsoft+365+Mailboxes
 ;; ; need to use
-; TODO figure out how to get STMP working on mit email 
+; TODO figure out how to get STMP working on mit email
+
+; TODO try to move things related to my project dir here

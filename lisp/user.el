@@ -6,7 +6,7 @@
 (defun my/compare-todo-status (a b)
   "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
 Return 1 if A > B, 0 if A = B, and -1 if A < B."
-  (let ((status-order '("TODO" "WAIT" "DONE")))
+  (let ((status-order '("TODO" "READ" "WATCH" "WAIT" "DONE")))
     (cl-labels ((status-rank (str)
                   (or (cl-position-if (lambda (s) (string-match-p s str)) status-order)
                       (length status-order))))  ; if none found, return a high rank
