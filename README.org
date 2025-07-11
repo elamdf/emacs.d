@@ -277,7 +277,7 @@ Capture bindings
 
           ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
            "* %U \"%i%?\"" :empty-lines-after 1)
-          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
            "* READ %(my/zotero-latest-capture-string) - Entered on %U\n %?" :empty-lines-after 1))
         )
   ;;
@@ -393,7 +393,6 @@ Capture bindings
 #+BEGIN_SRC emacs-lisp
   (use-package elfeed)
   (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
-                       "https://rss.app/feeds/GFkcKePjOctUGmcg.xml" ;; Design Systems International/Ideas
                        "https://semianalysis.com/feed/"
                        "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
                        "https://irreal.org/blog/?feed=rss2"))
