@@ -163,35 +163,53 @@
 #+END_SRC
 * COMMENT Language & LSP Support
 #+BEGIN_SRC emacs-lisp
-    (use-package lsp-mode
-      :commands (lsp lsp-deferred)
-      :init   (setq lsp-keymap-prefix "C-c l")
-      :config (lsp-enable-which-key-integration t))
-    (use-package lsp-ui :commands lsp-ui-mode)
-    (add-hook 'python-mode-hook #'lsp-deferred)
-    (use-package tree-sitter)
-    (use-package tree-sitter-langs)
-    (use-package yaml-mode)
-    (require 'tree-sitter)
-    (require 'tree-sitter-langs)
-    (use-package rust-mode
-      :mode "\\.rs\\'"
-      :custom (rust-format-on-save t)
-      :hook (rust-mode . lsp-deferred))
-    (use-package lsp-metals
-      :custom
-      (lsp-metals-server-args
-       '("-J-Dmetals.allow-multiline-string-formatting=off"
-         "-J-Dmetals.icons=unicode"))
-      (lsp-metals-enable-semantic-highlighting t)
-      :hook (scala-mode . lsp-deferred))
-    (use-package calyx-mode
-      :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+  (use-package lsp-mode
+    :commands (lsp lsp-deferred)
+    :init   (setq lsp-keymap-prefix "C-c l")
+    :config (lsp-enable-which-key-integration t))
+  (use-package lsp-ui :commands lsp-ui-mode)
+  (add-hook 'python-mode-hook #'lsp-deferred)
+  (use-package tree-sitter)
+  (use-package tree-sitter-langs)
+  (use-package yaml-mode)
+  (require 'tree-sitter)
+  (require 'tree-sitter-langs)
+  (use-package rust-mode
+    :mode "\\.rs\\'"
+    :custom (rust-format-on-save t)
+    :hook (rust-mode . lsp-deferred))
+  (use-package lsp-metals
+    :custom
+    (lsp-metals-server-args
+     '("-J-Dmetals.allow-multiline-string-formatting=off"
+       "-J-Dmetals.icons=unicode"))
+    (lsp-metals-enable-semantic-highlighting t)
+    :hook (scala-mode . lsp-deferred))
+  (use-package calyx-mode
+    :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
   ;; auto format python stuff
   (use-package python-black
     :demand t
     :after python
     :hook (python-mode . python-black-on-save-mode-enable-dwim))
+
+  ;; flyover for prettier inline syntax checks
+  (use-package flyover)
+  (add-hook 'flycheck-mode-hook #'flyover-mode)
+  ;; Use theme colors for error/warning/info faces
+  (setq flyover-use-theme-colors t)
+
+  ;; Adjust background lightness (lower values = darker)
+  (setq flyover-background-lightness 45)
+
+  ;; Make icon background darker than foreground
+  (setq flyover-percent-darker 40)
+
+  (setq flyover-text-tint 'lighter) ;; or 'darker or nil
+
+  ;; "Percentage to lighten or darken the text when tinting is enabled."
+  (setq flyover-text-tint-percent 50)
+  (setq flyover-levels '(error warning))    ; Show only errors and warnings
 #+END_SRC
 Systemverilog stuff
 #+begin_src emacs-lisp
