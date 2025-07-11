@@ -151,62 +151,67 @@
     (use-package pr-review :after magit)
     (setq auth-sources '("\~/.authinfo"))
 #+END_SRC
-* Language & LSP Support
+* COMMENT Language & LSP Support
 #+BEGIN_SRC emacs-lisp
-  (use-package lsp-mode
-    :commands (lsp lsp-deferred)
-    :init   (setq lsp-keymap-prefix "C-c l")
-    :config (lsp-enable-which-key-integration t))
-  (use-package lsp-ui :commands lsp-ui-mode)
-  (add-hook 'python-mode-hook #'lsp-deferred)
-  (use-package tree-sitter)
-  (use-package tree-sitter-langs)
-  (use-package yaml-mode)
-  (require 'tree-sitter)
-  (require 'tree-sitter-langs)
-  (use-package rust-mode
-    :mode "\\.rs\\'"
-    :custom (rust-format-on-save t)
-    :hook (rust-mode . lsp-deferred))
-  (use-package lsp-metals
-    :custom
-    (lsp-metals-server-args
-     '("-J-Dmetals.allow-multiline-string-formatting=off"
-       "-J-Dmetals.icons=unicode"))
-    (lsp-metals-enable-semantic-highlighting t)
-    :hook (scala-mode . lsp-deferred))
-  (use-package calyx-mode
-    :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+    (use-package lsp-mode
+      :commands (lsp lsp-deferred)
+      :init   (setq lsp-keymap-prefix "C-c l")
+      :config (lsp-enable-which-key-integration t))
+    (use-package lsp-ui :commands lsp-ui-mode)
+    (add-hook 'python-mode-hook #'lsp-deferred)
+    (use-package tree-sitter)
+    (use-package tree-sitter-langs)
+    (use-package yaml-mode)
+    (require 'tree-sitter)
+    (require 'tree-sitter-langs)
+    (use-package rust-mode
+      :mode "\\.rs\\'"
+      :custom (rust-format-on-save t)
+      :hook (rust-mode . lsp-deferred))
+    (use-package lsp-metals
+      :custom
+      (lsp-metals-server-args
+       '("-J-Dmetals.allow-multiline-string-formatting=off"
+         "-J-Dmetals.icons=unicode"))
+      (lsp-metals-enable-semantic-highlighting t)
+      :hook (scala-mode . lsp-deferred))
+    (use-package calyx-mode
+      :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+  ;; auto format python stuff
+  (use-package python-black
+    :demand t
+    :after python
+    :hook (python-mode . python-black-on-save-mode-enable-dwim))
 #+END_SRC
 Systemverilog stuff
 #+begin_src emacs-lisp
-(use-package verilog-ext
-  :hook ((verilog-mode . verilog-ext-mode))
-  :init
-  ;; Can also be set through `M-x RET customize-group RET verilog-ext':
-  ;; Comment out/remove the ones you do not need
-  (setq verilog-ext-feature-list
-        '(font-lock
-          xref
-          capf
-          hierarchy
-          eglot
-          lsp
-          flycheck
-          beautify
-          navigation
-          template
-          formatter
-          compilation
-          imenu
-          which-func
-          hideshow
-          typedefs
-          time-stamp
-          block-end-comments
-          ports))
-  :config
-  (verilog-ext-mode-setup))
+  (use-package verilog-ext
+    :hook ((verilog-mode . verilog-ext-mode))
+    :init
+    ;; Can also be set through `M-x RET customize-group RET verilog-ext':
+    ;; Comment out/remove the ones you do not need
+    (setq verilog-ext-feature-list
+          '(font-lock
+            xref
+            capf
+            hierarchy
+            eglot
+            lsp
+            flycheck
+            beautify
+            navigation
+            template
+            formatter
+            compilation
+            imenu
+            which-func
+            hideshow
+            typedefs
+            time-stamp
+            block-end-comments
+            ports))
+    :config
+    (verilog-ext-mode-setup))
 
 #+end_src
 
