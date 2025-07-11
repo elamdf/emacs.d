@@ -2,7 +2,9 @@
 (defvar projects-dir
   (expand-file-name "~/Documents/projects/")
   "Root directory for my project-related Org files.")
-
+(defvar meetings-dir
+  (expand-file-name "~/Documents/projects/meetings")
+  "Root directory for my meeting notes.")
 ;; slack
 (require 'auth-source)             ;; probably not necessary
 (setq auth-sources '((:source "~/.authinfo")))
