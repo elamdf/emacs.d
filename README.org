@@ -69,70 +69,80 @@
 #+END_SRC
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
-  (use-package company)
-  (use-package ivy
-    :diminish
-    :bind (("C-s" . swiper)
-            :map ivy-minibuffer-map
-            ("TAB" . ivy-alt-done)
-            ("C-l" . ivy-alt-done)
-            ("C-j" . ivy-next-line)
-            ("C-k" . ivy-previous-line)
-            :map ivy-switch-buffer-map
-            ("C-k" . ivy-previous-line)
-            ("C-l" . ivy-done)
-            ("C-d" . ivy-switch-buffer-kill)
-            :map ivy-reverse-i-search-map
-            ("C-k" . ivy-previous-line)
-            ("C-d" . ivy-reverse-i-search-kill))
-    :config (ivy-mode 1))
-  (setq ivy-re-builders-alist '((t . ivy--regex-ignore-order))) ; literal‑ish search
-  (use-package orderless
-    :custom
-    (completion-styles '(orderless basic))
-    (completion-category-overrides '((file (styles basic partial-completion)))))
-  (use-package ivy-rich :after ivy :init (ivy-rich-mode 1))
-  (use-package counsel
-    :bind (("C-M-j" . counsel-switch-buffer)
-            ("M-x"   . counsel-M-x)
-            ("C-x C-f" . counsel-find-file)
-            :map minibuffer-local-map
-            ("C-r" . counsel-minibuffer-history))
-    :custom (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
-    :config (counsel-mode 1))
-  (use-package helpful
-    :commands (helpful-callable helpful-variable helpful-command helpful-key)
-    :custom
-    (counsel-describe-function-function #'helpful-callable)
-    (counsel-describe-variable-function #'helpful-variable)
-    :bind
-    ([remap describe-function] . counsel-describe-function)
-    ([remap describe-command]  . helpful-command)
-    ([remap describe-variable] . counsel-describe-variable)
-    ([remap describe-key]      . helpful-key))
-  (use-package swiper)
-  (use-package doom-themes :init (load-theme 'doom-palenight t))
-  (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
-  (setq mac-command-modifier 'meta)
-  (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
-  (setq-default indent-tabs-mode nil)
-  (use-package markdown-mode
-    :mode ("README\\.md\\'" . gfm-mode)
-    :init (setq markdown-command "multimarkdown")
-    :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
-  (defun my/markdown-no-comment-start ()
-    (setq-local comment-start nil))
-  (add-hook 'markdown-mode-hook #'my/markdown-no-comment-start)
+    (use-package company)
+    (use-package ivy
+      :diminish
+      :bind (("C-s" . swiper)
+              :map ivy-minibuffer-map
+              ("TAB" . ivy-alt-done)
+              ("C-l" . ivy-alt-done)
+              ("C-j" . ivy-next-line)
+              ("C-k" . ivy-previous-line)
+              :map ivy-switch-buffer-map
+              ("C-k" . ivy-previous-line)
+              ("C-l" . ivy-done)
+              ("C-d" . ivy-switch-buffer-kill)
+              :map ivy-reverse-i-search-map
+              ("C-k" . ivy-previous-line)
+              ("C-d" . ivy-reverse-i-search-kill))
+      :config (ivy-mode 1))
+    (setq ivy-re-builders-alist '((t . ivy--regex-ignore-order))) ; literal‑ish search
+    (use-package orderless
+      :custom
+      (completion-styles '(orderless basic))
+      (completion-category-overrides '((file (styles basic partial-completion)))))
+    (use-package ivy-rich :after ivy :init (ivy-rich-mode 1))
+    (use-package counsel
+      :bind (("C-M-j" . counsel-switch-buffer)
+              ("M-x"   . counsel-M-x)
+              ("C-x C-f" . counsel-find-file)
+              :map minibuffer-local-map
+              ("C-r" . counsel-minibuffer-history))
+      :custom (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
+      :config (counsel-mode 1))
+    (use-package helpful
+      :commands (helpful-callable helpful-variable helpful-command helpful-key)
+      :custom
+      (counsel-describe-function-function #'helpful-callable)
+      (counsel-describe-variable-function #'helpful-variable)
+      :bind
+      ([remap describe-function] . counsel-describe-function)
+      ([remap describe-command]  . helpful-command)
+      ([remap describe-variable] . counsel-describe-variable)
+      ([remap describe-key]      . helpful-key))
+    (use-package swiper)
+    (use-package doom-themes :init (load-theme 'doom-palenight t))
+    (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
+    (setq mac-command-modifier 'meta)
+    (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
+    (setq-default indent-tabs-mode nil)
+    (use-package markdown-mode
+      :mode ("README\\.md\\'" . gfm-mode)
+      :init (setq markdown-command "multimarkdown")
+      :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
+    (defun my/markdown-no-comment-start ()
+      (setq-local comment-start nil))
+    (add-hook 'markdown-mode-hook #'my/markdown-no-comment-start)
 
-  ;; casual
-  (use-package general)
-(use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
-  :general
-  (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
-  (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
-  (:keymaps 'calc-mode-map "C-o" 'casual-calc-tmenu)
-  (:keymaps 'dired-mode-map "C-o" 'casual-dired-tmenu)
-  (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
+    ;; casual
+    (use-package general)
+  (use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
+    :config
+       (require 'casual-calc)
+       (require 'casual-dired)
+       (require 'casual-agenda)
+       (require 'casual-image)
+       (require 'casual-ibuffer)
+       (require 'casual-info)
+         (require 'casual-make)
+    :general
+    (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
+    (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
+    (:keymaps 'calc-mode-map "C-o" 'casual-calc-tmenu)
+    (:keymaps 'dired-mode-map "C-o" 'casual-dired-tmenu)
+    (:keymaps 'make-mode-map "C-o" 'casual-make-tmenu)
+    (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
+
 #+END_SRC
 * Project & Version Control
 #+BEGIN_SRC emacs-lisp
