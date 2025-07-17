@@ -2,6 +2,39 @@
 ;; global defs
 (defvar my/org-projects-dir "~/Documents/projects/")
 
+(defun my/elfeed-org-capture-or-goto ()
+  "Create an Org capture entry for the current elfeed entry, or jump to it if it already exists.
+Run this from an `elfeed-entry` buffer."
+  (interactive)
+  (require 'org-capture)
+  (let* ((entry (elfeed-entry--get-entry))
+         (title (elfeed-entry-title entry))
+         (link (elfeed-entry-link entry))
+         (author (or (elfeed-meta entry :author) ""))
+         (org-file (expand-file-name "notes.org" projects-dir)) ;; change this to your file
+         (headline "Articles"))        ;; and this to your headline
+    (if (not (and title link))
+        (message "Missing title or link in elfeed entry.")
+      (with-current-buffer (find-file-noselect org-file)
+        (goto-char (point-min))
+        (if (re-search-forward (regexp-quote link) nil t)
+            (progn
+              (org-show-entry)
+              (org-reveal)
+              (switch-to-buffer (current-buffer))
+              (message "Found existing entry for: %s" title))
+          (let ((org-capture-link-is-already-stored t)
+                (org-stored-links `((,link ,title)))
+                (org-capture-entry
+                 `("e" "Elfeed article" entry
+                   (file+headline ,org-file ,headline)
+                   ,(concat "* [[%:link][%:title]]\n"
+                            ":PROPERTIES:\n"
+                            ":AUTHOR: " author "\n"
+                            ":LINK: %:link\n"
+                            ":END:\n\n%?"))))
+            (org-capture)))))))
+
 
 (defun my/compare-todo-status (a b)
   "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
@@ -173,5 +206,6 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
        (save-excursion (hs-show-all))
        (setq this-command 'hs-global-show))
       (_ (hs-hide-all))))
+
 
 (provide 'user)

@@ -246,45 +246,43 @@ Systemverilog stuff
 * Org Mode Configuration
 
 #+BEGIN_SRC emacs-lisp
-    (setq org-ellipsis " ▾"
-          org-startup-folded 'content
-          org-cycle-separator-lines 2
-          org-fontify-quote-and-verse-blocks t)
-    (add-hook 'org-mode-hook #'org-indent-mode)
-    (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
-    (setq org-directory projects-dir)
-    (setq org-default-notes-file (concat org-directory "/notes.org"))
-    (use-package org-tempo :ensure nil :demand t)
-    (dolist (tpl '(("sh" . "src sh")
-                   ("el" . "src emacs-lisp")
-                   ("li" . "src lisp")
-                   ("sc" . "src scheme")
-                   ("ts" . "src typescript")
-                   ("py" . "src python")
-                   ("yaml" . "src yaml")
-                   ("json" . "src json")))
-      (add-to-list 'org-structure-template-alist tpl))
-    (setq org-deadline-warning-days 1
-          org-use-fast-tag-selection t)
-    (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
-    ;; Capture & Refile templates
+  (setq org-ellipsis " ▾"
+        org-startup-folded 'content
+        org-cycle-separator-lines 2
+        org-fontify-quote-and-verse-blocks t)
+  (add-hook 'org-mode-hook #'org-indent-mode)
+  (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
+  (setq org-directory projects-dir)
+  (setq org-default-notes-file (concat org-directory "/notes.org"))
+  (use-package org-tempo :ensure nil :demand t)
+  (dolist (tpl '(("sh" . "src sh")
+                 ("el" . "src emacs-lisp")
+                 ("li" . "src lisp")
+                 ("sc" . "src scheme")
+                 ("ts" . "src typescript")
+                 ("py" . "src python")
+                 ("yaml" . "src yaml")
+                 ("json" . "src json")))
+    (add-to-list 'org-structure-template-alist tpl))
+  (setq org-deadline-warning-days 1
+        org-use-fast-tag-selection t)
+  (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
+  ;; Capture & Refile templates
 
 
   (use-package fold-and-focus
     :demand t
     :straight (fold-and-focus :type git :host nil :repo
-             "https://git.sr.ht/~flandrew/fold-and-focus")
+                              "https://git.sr.ht/~flandrew/fold-and-focus")
     :config
     (global-fold-and-focus-org-mode)
     (global-fold-and-focus-md-mode)
     (global-fold-and-focus-el-mode))
 
-  #+end_src
-
-  #+RESULTS:
+#+end_src
 
 Capture bindings
-    #+begin_src emacs-lisp
+#+begin_src emacs-lisp
   (setq org-capture-templates
         '(("r" "Read" entry
            (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
@@ -302,13 +300,32 @@ Capture bindings
 
           ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
            "* %U %i %?" :empty-lines-after 1)
-
+          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
+           "* IDEA %U %?" :empty-lines-after 1)
           ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
            "* %U \"%i%?\"" :empty-lines-after 1)
           ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* READ %(my/zotero-latest-capture-string) - Entered on %U\n %?" :empty-lines-after 1))
-        )
-  ;;
+           "* READ %(my/zotero-latest-capture-string) - Entered on %U\n %?" :empty-lines-after 1)
+
+          ("e" "Elfeed article" entry
+           (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* [[%:link][%:description]]
+  :PROPERTIES:
+  :LINK: %:link
+  :AUTHOR: %:authors
+  :END: \n%?" :empty-lines-after 1)))
+  (defun my/org-capture-elfeed ()
+    (interactive)
+    (org-capture nil "e"))
+
+  ;;                   (concat "* a " ;"* [[%:canonical-url][%:title]]\n"
+  ;;                             ":PROPERTIES:\n"
+  ;;                             ":AUTHOR: " "\n"
+  ;;                             ":LINK: %c\n"
+  ;;                             ":END:\n\n%?"))
+  ;; )
+  ;;             )
+  ;;       ;;
   (setq org-agenda-sorting-strategy
         '((agenda user-defined-up) (todo user-defined-up)
           (tags urgency-down category-keep) (search category-keep))
@@ -319,17 +336,19 @@ Capture bindings
 
   (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (my/org-project-files)))
   (use-package zotxt :after org)
-  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
-  (setq org-todo-keyword-faces '(("READ" . "dark green") ("WATCH" . "dark blue")))
+  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
+  (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
   (setq org-src-fontify-natively t)
   (use-package htmlize)
   (setq org-export-publishing-directory "./assets")
   (use-package ox-reveal)
 #+END_SRC
+
 * Keybindings & Shortcuts
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "<escape>") 'keyboard-escape-quit)
   (global-set-key (kbd "C-c ;")   #'replace-regexp)
+  (define-key org-mode-map (kbd "C-c ;")   #'replace-regexp)
   ;; GPTel
   (global-set-key (kbd "C-c s") #'gptel-menu)
   (global-set-key (kbd "C-c g") #'gptel)
@@ -337,6 +356,7 @@ Capture bindings
   (global-set-key (kbd "C-c l") #'org-store-link)
   (global-set-key (kbd "C-c a") #'org-agenda)
   (global-set-key (kbd "C-c c") #'org-capture)
+  (define-key elfeed-show-mode-map (kbd "w") #'my/org-capture-elfeed)
   (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
   ;; Bismuth
   (global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
@@ -348,6 +368,8 @@ Capture bindings
   (dolist (k '("<left>" "<right>" "<up>" "<down>"))
     (global-unset-key (kbd k)))
 #+END_SRC
+
+
 * Conda & Environment
 #+BEGIN_SRC emacs-lisp
   (use-package conda)
@@ -423,6 +445,9 @@ Capture bindings
   (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
                        "https://semianalysis.com/feed/"
                        "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
+                       "https://www.chinatalk.media/feed"
+                       "https://www.sinification.com/feed"
+                       "https://elam.day/post/atom.xml"
                        "https://irreal.org/blog/?feed=rss2"))
 #+END_SRC
 * Miscellaneous
