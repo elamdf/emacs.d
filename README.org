@@ -161,7 +161,7 @@
     (use-package pr-review :after magit)
     (setq auth-sources '("\~/.authinfo"))
 #+END_SRC
-* COMMENT Language & LSP Support
+* Language & LSP Support
 #+BEGIN_SRC emacs-lisp
   (use-package lsp-mode
     :commands (lsp lsp-deferred)
