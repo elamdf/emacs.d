@@ -356,7 +356,7 @@ Capture bindings
   (global-set-key (kbd "C-c l") #'org-store-link)
   (global-set-key (kbd "C-c a") #'org-agenda)
   (global-set-key (kbd "C-c c") #'org-capture)
-  (define-key elfeed-show-mode-map (kbd "w") #'my/org-capture-elfeed)
+
   (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
   ;; Bismuth
   (global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
@@ -449,6 +449,7 @@ Capture bindings
                        "https://www.sinification.com/feed"
                        "https://elam.day/post/atom.xml"
                        "https://irreal.org/blog/?feed=rss2"))
+  (define-key elfeed-show-mode-map (kbd "w") #'my/org-capture-elfeed)
 #+END_SRC
 * Miscellaneous
 #+BEGIN_SRC emacs-lisp
