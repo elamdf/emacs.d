@@ -152,7 +152,7 @@
       :custom (projectile-completion-system 'ivy)
       :bind-keymap ("C-c p" . projectile-command-map)
       :init
-      (setq projectile-project-search-path '(list "~~/bwrc" "~~/Documents"))
+      (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
       (setq projectile-switch-project-action #'projectile-dired))
     (use-package counsel-projectile :after projectile :config (counsel-projectile-mode))
     (setq counsel-find-file-ignore-regexp "\\\~\\'")
