@@ -23,8 +23,10 @@
   (load (concat user-emacs-directory "elam-personal-mac.el"))
   ;; Private libraries
   (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
+
   (add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
   (require 'user)                         ; personal helpers
+
 #+END_SRC
 * Package Management
 #+BEGIN_SRC emacs-lisp
@@ -146,20 +148,24 @@
 #+END_SRC
 * Project & Version Control
 #+BEGIN_SRC emacs-lisp
-    (use-package projectile
-      :diminish projectile-mode
-      :config (projectile-mode)
-      :custom (projectile-completion-system 'ivy)
-      :bind-keymap ("C-c p" . projectile-command-map)
-      :init
-      (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
-      (setq projectile-switch-project-action #'projectile-dired))
-    (use-package counsel-projectile :after projectile :config (counsel-projectile-mode))
-    (setq counsel-find-file-ignore-regexp "\\\~\\'")
-    (use-package magit :commands magit-status)
-    (use-package forge :after magit)
-    (use-package pr-review :after magit)
-    (setq auth-sources '("\~/.authinfo"))
+  (use-package projectile
+    :diminish projectile-mode
+    :config (projectile-mode)
+    :custom (projectile-completion-system 'ivy)
+    :bind-keymap ("C-c p" . projectile-command-map)
+    :init
+    (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
+    (setq projectile-switch-project-action #'projectile-dired))
+  (use-package counsel-projectile :after projectile :config (counsel-projectile-mode))
+  (setq counsel-find-file-ignore-regexp "\\\~\\'")
+  (use-package magit :commands magit-status)
+  (use-package forge :after magit)
+  (use-package pr-review :after magit)
+  (setq auth-sources '("\~/.authinfo"))
+  ;; make sure things are available on PATH
+  (use-package exec-path-from-shell)
+  (when (memq window-system '(mac ns x))
+    (exec-path-from-shell-initialize))
 #+END_SRC
 * Language & LSP Support
 #+BEGIN_SRC emacs-lisp
@@ -283,66 +289,61 @@ Systemverilog stuff
 
 Capture bindings
 #+begin_src emacs-lisp
-  (setq org-capture-templates
-        '(("r" "Read" entry
-           (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
+        (setq org-capture-templates
+              '(("r" "Read" entry
+                 (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+                 "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
 
 
-          ("w" "Watch" entry
-           (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
-           ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
+                ("w" "Watch" entry
+                 (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+                 ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
 
-           "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
+                 "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
 
-          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
-           "* TODO %U %i %?" :empty-lines-after 1)
+                ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+                 "* TODO %U %i %?" :empty-lines-after 1)
 
-          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
-           "* %U %i %?" :empty-lines-after 1)
-          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
-           "* IDEA %U %?" :empty-lines-after 1)
-          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
-           "* %U \"%i%?\"" :empty-lines-after 1)
-          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* READ %(my/zotero-latest-capture-string) - Entered on %U\n %?" :empty-lines-after 1)
-
-          ("e" "Elfeed article" entry
-           (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* [[%:link][%:description]]
-  :PROPERTIES:
-  :LINK: %:link
-  :AUTHOR: %:authors
-  :END: \n%?" :empty-lines-after 1)))
-  (defun my/org-capture-elfeed ()
-    (interactive)
-    (org-capture nil "e"))
-
-  ;;                   (concat "* a " ;"* [[%:canonical-url][%:title]]\n"
-  ;;                             ":PROPERTIES:\n"
-  ;;                             ":AUTHOR: " "\n"
-  ;;                             ":LINK: %c\n"
-  ;;                             ":END:\n\n%?"))
-  ;; )
-  ;;             )
-  ;;       ;;
-  (setq org-agenda-sorting-strategy
-        '((agenda user-defined-up) (todo user-defined-up)
-          (tags urgency-down category-keep) (search category-keep))
-        )
-  (setq org-agenda-cmp-user-defined 'my/compare-todo-status)
+                ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+                 "* %U %i %?" :empty-lines-after 1)
+                ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
+                 "* IDEA %U %?" :empty-lines-after 1)
+                ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+                 "* %U \"%i%?\"" :empty-lines-after 1)
+                ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+                 "* READ %(my/zotero-latest-capture-string)
+- Entered on %U
+%?" :empty-lines-after 1)
+                ("e" "Elfeed article" entry
+                 (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+                 "* [[%:link][%:description]]
+        :PROPERTIES:
+        :LINK: %:link
+        :AUTHOR: %:authors
+        :END: \n%?" :empty-lines-after 1)))
+        (defun my/org-capture-elfeed ()
+          (interactive)
+          (org-capture nil "e"))
+        (setq org-agenda-sorting-strategy
+              '((agenda user-defined-up) (todo user-defined-up)
+                (tags urgency-down category-keep) (search category-keep))
+              )
+        (setq org-agenda-cmp-user-defined 'my/compare-todo-status)
 
 
 
-  (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (my/org-project-files)))
-  (use-package zotxt :after org)
-  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
-  (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
-  (setq org-src-fontify-natively t)
-  (use-package htmlize)
-  (setq org-export-publishing-directory "./assets")
-  (use-package ox-reveal)
+        (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (my/org-project-files)))
+        (use-package zotxt :after org)
+        (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
+        (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
+        (setq org-src-fontify-natively t)
+        (use-package htmlize)
+        (setq org-export-publishing-directory "./assets")
+        (use-package ox-reveal)
 #+END_SRC
+
+#+RESULTS:
+
 
 * Keybindings & Shortcuts
 #+BEGIN_SRC emacs-lisp
@@ -464,7 +465,14 @@ add to =~/.authinfo.gpg=
 #+begin_src
 machine <workspace>.slack.com  login token  password xoxc-…    # API token
 machine <workspace>.slack.com  login cookie password "xoxd-…; d-s=…; lc=…"  # full cookie header
+
 #+end_src
+
+also run
+#+begin_src bash
+defaults write org.gnu.Emacs AppleFontSmoothing -int 0
+#+end_src
+to get cleaner fonts
 
 
 * External dependencies I remember adding
