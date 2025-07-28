@@ -68,75 +68,229 @@
   ;; Disable line numbers where they get in the way
   (dolist (hook '(org-mode-hook term-mode-hook shell-mode-hook treemacs-mode-hook eshell-mode-hook))
     (add-hook hook (lambda () (display-line-numbers-mode 0))))
+
 #+END_SRC
+* Completion
+#+begin_src emacs-lisp
+  (use-package vertico
+    :demand t                             ; Otherwise won't get loaded immediately
+    :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
+                       :includes (vertico-indexed
+                                  vertico-flat
+                                  vertico-grid
+                                  vertico-mouse
+                                  vertico-quick
+                                  vertico-buffer
+                                  vertico-repeat
+                                  vertico-reverse
+                                  vertico-directory
+                                  vertico-multiform
+                                  vertico-unobtrusive))
+    :general
+    (:keymaps '(normal insert visual motion)
+              "M-." #'vertico-repeat)
+    (:keymaps 'vertico-map
+              "<tab>" #'vertico-insert ; Set manually otherwise setting `vertico-quick-insert' overrides this
+              "<escape>" #'minibuffer-keyboard-quit
+              "?" #'minibuffer-completion-help
+              "C-M-n" #'vertico-next-group
+              "C-M-p" #'vertico-previous-group
+              ;; Multiform toggles
+              "<backspace>" #'vertico-directory-delete-char
+              "C-w" #'vertico-directory-delete-word
+              "C-<backspace>" #'vertico-directory-delete-word
+              "RET" #'vertico-directory-enter
+              "C-i" #'vertico-quick-insert
+              "C-o" #'vertico-quick-exit
+              "M-o" #'kb/vertico-quick-embark
+              "M-G" #'vertico-multiform-grid
+              "M-F" #'vertico-multiform-flat
+              "M-R" #'vertico-multiform-reverse
+              "M-U" #'vertico-multiform-unobtrusive
+              "C-l" #'kb/vertico-multiform-flat-toggle)
+    :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy) ; Clean up file path when typing
+           (minibuffer-setup . vertico-repeat-save)) ; Make sure vertico state is saved
+    :custom
+    (vertico-count 13)
+    (vertico-resize t)
+    (vertico-cycle nil)
+    ;; Extensions
+    (vertico-grid-separator "       ")
+    (vertico-grid-lookahead 50)
+    (vertico-buffer-display-action '(display-buffer-reuse-window))
+    (vertico-multiform-categories
+     '((file reverse)
+       (consult-grep buffer)
+       (consult-location)
+       (imenu buffer)
+       (library reverse indexed)
+       (org-roam-node reverse indexed)
+       (t reverse)))
+    (vertico-multiform-commands
+     '(("flyspell-correct-*" grid reverse)
+       (org-refile grid reverse indexed)
+       (consult-yank-pop indexed)
+       (consult-flycheck)
+       (consult-lsp-diagnostics)))
+    :init
+    (defun kb/vertico-multiform-flat-toggle ()
+      "Toggle between flat and reverse."
+      (interactive)
+      (vertico-multiform--display-toggle 'vertico-flat-mode)
+      (if vertico-flat-mode
+          (vertico-multiform--temporary-mode 'vertico-reverse-mode -1)
+        (vertico-multiform--temporary-mode 'vertico-reverse-mode 1)))
+    (defun kb/vertico-quick-embark (&optional arg)
+      "Embark on candidate using quick keys."
+      (interactive)
+      (when (vertico-quick-jump)
+        (embark-act arg)))
+
+    ;; Workaround for problem with `tramp' hostname completions. This overrides
+    ;; the completion style specifically for remote files! See
+    ;; https://github.com/minad/vertico#tramp-hostname-completion
+    (defun kb/basic-remote-try-completion (string table pred point)
+      (and (vertico--remote-p string)
+           (completion-basic-try-completion string table pred point)))
+    (defun kb/basic-remote-all-completions (string table pred point)
+      (and (vertico--remote-p string)
+           (completion-basic-all-completions string table pred point)))
+    (add-to-list 'completion-styles-alist
+                 '(basic-remote           ; Name of `completion-style'
+                   kb/basic-remote-try-completion kb/basic-remote-all-completions nil))
+    :config
+    (vertico-mode)
+    ;; Extensions
+    (vertico-multiform-mode)
+
+    ;; Prefix the current candidate with “» ”. From
+    ;; https://github.com/minad/vertico/wiki#prefix-current-candidate-with-arrow
+    (advice-add #'vertico--format-candidate :around
+                (lambda (orig cand prefix suffix index _start)
+                  (setq cand (funcall orig cand prefix suffix index _start))
+                  (concat
+                   (if (= vertico--index index)
+                       (propertize "» " 'face 'vertico-current)
+                     "  ")
+                   cand))))
+  (use-package orderless
+    :custom
+    (completion-styles '(orderless))
+    (completion-category-defaults nil)    ; I want to be in control!
+    (completion-category-overrides
+     '((file (styles basic-remote ; For `tramp' hostname completion with `vertico'
+                     orderless
+                     ))
+       ))
+
+    (orderless-component-separator 'orderless-escapable-split-on-space)
+    (orderless-matching-styles
+     '(orderless-literal
+       orderless-prefixes
+       orderless-initialism
+       orderless-regexp
+       ;; orderless-flex
+       ;; orderless-strict-leading-initialism
+       ;; orderless-strict-initialism
+       ;; orderless-strict-full-initialism
+       ;; orderless-without-literal          ; Recommended for dispatches instead
+       ))
+    (orderless-style-dispatchers
+     '(prot-orderless-literal-dispatcher
+       prot-orderless-strict-initialism-dispatcher
+       prot-orderless-flex-dispatcher))
+    :init
+    (defun orderless--strict-*-initialism (component &optional anchored)
+      "Match a COMPONENT as a strict initialism, optionally ANCHORED.
+  The characters in COMPONENT must occur in the candidate in that
+  order at the beginning of subsequent words comprised of letters.
+  Only non-letters can be in between the words that start with the
+  initials.
+
+  If ANCHORED is `start' require that the first initial appear in
+  the first word of the candidate.  If ANCHORED is `both' require
+  that the first and last initials appear in the first and last
+  words of the candidate, respectively."
+      (orderless--separated-by
+          '(seq (zero-or-more alpha) word-end (zero-or-more (not alpha)))
+        (cl-loop for char across component collect `(seq word-start ,char))
+        (when anchored '(seq (group buffer-start) (zero-or-more (not alpha))))
+        (when (eq anchored 'both)
+          '(seq (zero-or-more alpha) word-end (zero-or-more (not alpha)) eol))))
+
+    (defun orderless-strict-initialism (component)
+      "Match a COMPONENT as a strict initialism.
+  This means the characters in COMPONENT must occur in the
+  candidate in that order at the beginning of subsequent words
+  comprised of letters.  Only non-letters can be in between the
+  words that start with the initials."
+      (orderless--strict-*-initialism component))
+
+    (defun prot-orderless-literal-dispatcher (pattern _index _total)
+      "Literal style dispatcher using the equals sign as a suffix.
+  It matches PATTERN _INDEX and _TOTAL according to how Orderless
+  parses its input."
+      (when (string-suffix-p "=" pattern)
+        `(orderless-literal . ,(substring pattern 0 -1))))
+
+    (defun prot-orderless-strict-initialism-dispatcher (pattern _index _total)
+      "Leading initialism  dispatcher using the comma suffix.
+  It matches PATTERN _INDEX and _TOTAL according to how Orderless
+  parses its input."
+      (when (string-suffix-p "," pattern)
+        `(orderless-strict-initialism . ,(substring pattern 0 -1))))
+
+    (defun prot-orderless-flex-dispatcher (pattern _index _total)
+      "Flex  dispatcher using the tilde suffix.
+  It matches PATTERN _INDEX and _TOTAL according to how Orderless
+  parses its input."
+      (when (string-suffix-p "." pattern)
+        `(orderless-flex . ,(substring pattern 0 -1)))))
+
+  (use-package consult)
+
+#+end_src
+
+#+RESULTS:
+
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
-    (use-package company)
-    (use-package ivy
-      :diminish
-      :bind (("C-s" . swiper)
-              :map ivy-minibuffer-map
-              ("TAB" . ivy-alt-done)
-              ("C-l" . ivy-alt-done)
-              ("C-j" . ivy-next-line)
-              ("C-k" . ivy-previous-line)
-              :map ivy-switch-buffer-map
-              ("C-k" . ivy-previous-line)
-              ("C-l" . ivy-done)
-              ("C-d" . ivy-switch-buffer-kill)
-              :map ivy-reverse-i-search-map
-              ("C-k" . ivy-previous-line)
-              ("C-d" . ivy-reverse-i-search-kill))
-      :config (ivy-mode 1))
-    (setq ivy-re-builders-alist '((t . ivy--regex-ignore-order))) ; literal‑ish search
-    (use-package orderless
-      :custom
-      (completion-styles '(orderless basic))
-      (completion-category-overrides '((file (styles basic partial-completion)))))
-    (use-package ivy-rich :after ivy :init (ivy-rich-mode 1))
-    (use-package counsel
-      :bind (("C-M-j" . counsel-switch-buffer)
-              ("M-x"   . counsel-M-x)
-              ("C-x C-f" . counsel-find-file)
-              :map minibuffer-local-map
-              ("C-r" . counsel-minibuffer-history))
-      :custom (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
-      :config (counsel-mode 1))
-    (use-package helpful
-      :commands (helpful-callable helpful-variable helpful-command helpful-key)
-      :custom
-      (counsel-describe-function-function #'helpful-callable)
-      (counsel-describe-variable-function #'helpful-variable)
-      :bind
-      ([remap describe-function] . counsel-describe-function)
-      ([remap describe-command]  . helpful-command)
-      ([remap describe-variable] . counsel-describe-variable)
-      ([remap describe-key]      . helpful-key))
-    (use-package swiper)
-    (use-package doom-themes :init (load-theme 'doom-palenight t))
-    (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
-    (setq mac-command-modifier 'meta)
-    (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
-    (setq-default indent-tabs-mode nil)
-    (use-package markdown-mode
-      :mode ("README\\.md\\'" . gfm-mode)
-      :init (setq markdown-command "multimarkdown")
-      :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
-    (defun my/markdown-no-comment-start ()
-      (setq-local comment-start nil))
-    (add-hook 'markdown-mode-hook #'my/markdown-no-comment-start)
+  (use-package company)
 
-    ;; casual
-    (use-package general)
+  ;; (use-package ivy-rich :after ivy :init (ivy-rich-mode 1))
+  ;; (use-package counsel
+  ;;   :bind (("C-M-j" . counsel-switch-buffer)
+  ;;           ("M-x"   . counsel-M-x)
+  ;;           ("C-x C-f" . counsel-find-file)
+  ;;           :map minibuffer-local-map
+  ;;           ("C-r" . counsel-minibuffer-history))
+  ;;   :cus
+  ;; tom (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
+  ;; :config (counsel-mode 1))
+  (use-package doom-themes :init (load-theme 'doom-palenight t))
+  (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
+  (setq mac-command-modifier 'meta)
+  (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
+  (setq-default indent-tabs-mode nil)
+  (use-package markdown-mode
+    :mode ("README\\.md\\'" . gfm-mode)
+    :init (setq markdown-command "multimarkdown")
+    :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
+  (defun my/markdown-no-comment-start ()
+    (setq-local comment-start nil))
+  (add-hook 'markdown-mode-hook #'my/markdown-no-comment-start)
+
+  ;; casual
+  (use-package general)
   (use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
     :config
-       (require 'casual-calc)
-       (require 'casual-dired)
-       (require 'casual-agenda)
-       (require 'casual-image)
-       (require 'casual-ibuffer)
-       (require 'casual-info)
-         (require 'casual-make)
+    (require 'casual-calc)
+    (require 'casual-dired)
+    (require 'casual-agenda)
+    (require 'casual-image)
+    (require 'casual-ibuffer)
+    (require 'casual-info)
+    (require 'casual-make)
     :general
     (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
     (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
@@ -146,6 +300,9 @@
     (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
 
 #+END_SRC
+
+#+RESULTS:
+
 * Project & Version Control
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
@@ -156,8 +313,8 @@
     :init
     (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
     (setq projectile-switch-project-action #'projectile-dired))
-  (use-package counsel-projectile :after projectile :config (counsel-projectile-mode))
-  (setq counsel-find-file-ignore-regexp "\\\~\\'")
+  (use-package consult-projectile
+    :straight (consult-projectile :type git :host gitlab :repo "OlMon/consult-projectile" :branch "master"))
   (use-package magit :commands magit-status)
   (use-package forge :after magit)
   (use-package pr-review :after magit)
@@ -285,61 +442,69 @@ Systemverilog stuff
     (global-fold-and-focus-md-mode)
     (global-fold-and-focus-el-mode))
 
+  ;;
+  (global-set-key (kbd "M-+") 'elamdf/org-word-count)
+  (global-set-key (kbd "C-M-s") 'consult-line)
+  (global-set-key (kbd "C-s") 'isearch-forward-regexp)
+  (global-set-key (kbd "C-r") 'isearch-backward-regexp)
+
+
 #+end_src
+
 
 Capture bindings
 #+begin_src emacs-lisp
-        (setq org-capture-templates
-              '(("r" "Read" entry
-                 (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-                 "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
+  (setq org-capture-templates
+        '(("r" "Read" entry
+           (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
 
 
-                ("w" "Watch" entry
-                 (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
-                 ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
+          ("w" "Watch" entry
+           (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+           ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
 
-                 "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
+           "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
 
-                ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
-                 "* TODO %U %i %?" :empty-lines-after 1)
+          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+           "* TODO %U %i %?" :empty-lines-after 1)
 
-                ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
-                 "* %U %i %?" :empty-lines-after 1)
-                ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
-                 "* IDEA %U %?" :empty-lines-after 1)
-                ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
-                 "* %U \"%i%?\"" :empty-lines-after 1)
-                ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-                 "* READ %(elamdf/zotero-latest-capture-string)
-- Entered on %U
-%?" :empty-lines-after 1)
-                ("e" "Elfeed article" entry
-                 (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-                 "* [[%:link][%:description]]
-        :PROPERTIES:
-        :LINK: %:link
-        :AUTHOR: %:authors
-        :END: \n%?" :empty-lines-after 1)))
-        (defun elamdf/org-capture-elfeed ()
-          (interactive)
-          (org-capture nil "e"))
-        (setq org-agenda-sorting-strategy
-              '((agenda user-defined-up) (todo user-defined-up)
-                (tags urgency-down category-keep) (search category-keep))
-              )
-        (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
+          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+           "* %U %i %?" :empty-lines-after 1)
+          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
+           "* IDEA %U %?" :empty-lines-after 1)
+          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+           "* %U \"%i%?\"" :empty-lines-after 1)
+          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* READ %(elamdf/zotero-latest-capture-string)
+  - Entered on %U
+  %?" :empty-lines-after 1)
+          ("e" "Elfeed article" entry
+           (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* [[%:link][%:description]]
+          :PROPERTIES:
+          :LINK: %:link
+          :AUTHOR: %:authors
+          :END: \n%?" :empty-lines-after 1)))
+  (defun elamdf/org-capture-elfeed ()
+    (interactive)
+    (org-capture nil "e"))
+  (setq org-agenda-sorting-strategy
+        '((agenda user-defined-up) (todo user-defined-up)
+          (tags urgency-down category-keep) (search category-keep))
+        )
+  (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
 
 
 
-        (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
-        (use-package zotxt :after org)
-        (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
-        (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
-        (setq org-src-fontify-natively t)
-        (use-package htmlize)
-        (setq org-export-publishing-directory "./assets")
-        (use-package ox-reveal)
+  (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
+  (use-package zotxt :after org)
+  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
+  (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
+  (setq org-src-fontify-natively t)
+  (use-package htmlize)
+  (setq org-export-publishing-directory "./assets")
+  (use-package ox-reveal)
 #+END_SRC
 
 #+RESULTS:
@@ -368,7 +533,19 @@ Capture bindings
   ;; Disable arrow keys
   (dolist (k '("<left>" "<right>" "<up>" "<down>"))
     (global-unset-key (kbd k)))
+  (use-package backward-forward
+    :ensure t
+    :demand t
+    :config
+    (backward-forward-mode t)
+    :bind
+    (:map backward-forward-mode-map
+          ("<left>" . backward-forward-previous-location)
+          ("<right>" . backward-forward-next-location)))
 #+END_SRC
+
+#+RESULTS:
+: backward-forward-next-location
 
 
 * Conda & Environment
@@ -470,7 +647,7 @@ machine <workspace>.slack.com  login cookie password "xoxd-…; d-s=…; lc=…"
 
 also run
 #+begin_src bash
-defaults write org.gnu.Emacs AppleFontSmoothing -int 0
+  defaults write org.gnu.Emacs AppleFontSmoothing -int 0
 #+end_src
 to get cleaner fonts
 
