@@ -452,7 +452,7 @@ Systemverilog stuff
 #+end_src
 
 
-Capture bindings
+* Org Capture bindings
 #+begin_src emacs-lisp
   (setq org-capture-templates
         '(("r" "Read" entry
