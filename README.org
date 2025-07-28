@@ -311,7 +311,7 @@ Capture bindings
                 ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
                  "* %U \"%i%?\"" :empty-lines-after 1)
                 ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-                 "* READ %(my/zotero-latest-capture-string)
+                 "* READ %(elamdf/zotero-latest-capture-string)
 - Entered on %U
 %?" :empty-lines-after 1)
                 ("e" "Elfeed article" entry
@@ -321,18 +321,18 @@ Capture bindings
         :LINK: %:link
         :AUTHOR: %:authors
         :END: \n%?" :empty-lines-after 1)))
-        (defun my/org-capture-elfeed ()
+        (defun elamdf/org-capture-elfeed ()
           (interactive)
           (org-capture nil "e"))
         (setq org-agenda-sorting-strategy
               '((agenda user-defined-up) (todo user-defined-up)
                 (tags urgency-down category-keep) (search category-keep))
               )
-        (setq org-agenda-cmp-user-defined 'my/compare-todo-status)
+        (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
 
 
 
-        (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (my/org-project-files)))
+        (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
         (use-package zotxt :after org)
         (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
         (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
@@ -358,7 +358,7 @@ Capture bindings
   (global-set-key (kbd "C-c a") #'org-agenda)
   (global-set-key (kbd "C-c c") #'org-capture)
 
-  (global-set-key (kbd "C-c m") #'my/create-meeting-notes-file)
+  (global-set-key (kbd "C-c m") #'elamdf/create-meeting-notes-file)
   ;; Bismuth
   (global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
 
@@ -425,12 +425,12 @@ Capture bindings
   (setq gptel-model 'qwen3:4b
         gptel-backend (gptel-make-ollama "Qwen 3 4B" :host "localhost:11434" :stream t :models '(qwen3:4b)))
   (add-hook 'gptel-post-response-functions #'gptel-end-of-response)
-  (add-hook 'gptel-before-send-hook       #'my/ensure-ollama-running)
-  (defun my/advise-gptel-commands ()
+  (add-hook 'gptel-before-send-hook       #'elamdf/ensure-ollama-running)
+  (defun elamdf/advise-gptel-commands ()
     "Ensure Ollama is running before any \`gptel-' command."
     (dolist (sym (apropos-internal "^gptel-" 'commandp))
-      (advice-add sym :before #'my/ensure-ollama-running)))
-  (my/advise-gptel-commands)
+      (advice-add sym :before #'elamdf/ensure-ollama-running)))
+  (elamdf/advise-gptel-commands)
 #+END_SRC
 * Bismuth Configuration
 #+BEGIN_SRC emacs-lisp
@@ -450,12 +450,12 @@ Capture bindings
                        "https://www.sinification.com/feed"
                        "https://elam.day/post/atom.xml"
                        "https://irreal.org/blog/?feed=rss2"))
-  (define-key elfeed-show-mode-map (kbd "w") #'my/org-capture-elfeed)
+  (define-key elfeed-show-mode-map (kbd "w") #'elamdf/org-capture-elfeed)
 #+END_SRC
 * Miscellaneous
 #+BEGIN_SRC emacs-lisp
   ;; Fun motivational quote when opening files
-  (add-hook 'find-file-hook #'my/show-random-org-quote)
+  (add-hook 'find-file-hook #'elamdf/show-random-org-quote)
   ;; Allow 'list-timers' command
   (put 'list-timers 'disabled nil)
 #+END_SRC

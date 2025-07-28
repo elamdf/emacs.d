@@ -1,8 +1,8 @@
 
 ;; global defs
-(defvar my/org-projects-dir "~/Documents/projects/")
+(defvar elamdf/org-projects-dir "~/Documents/projects/")
 
-(defun my/elfeed-org-capture-or-goto ()
+(defun elamdf/elfeed-org-capture-or-goto ()
   "Create an Org capture entry for the current elfeed entry, or jump to it if it already exists.
 Run this from an `elfeed-entry` buffer."
   (interactive)
@@ -36,7 +36,7 @@ Run this from an `elfeed-entry` buffer."
             (org-capture)))))))
 
 
-(defun my/compare-todo-status (a b)
+(defun elamdf/compare-todo-status (a b)
   "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
 Return 1 if A > B, 0 if A = B, and -1 if A < B."
   (let ((status-order '("TODO" "READ" "WATCH" "WAIT" "DONE")))
@@ -54,7 +54,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
   (expand-file-name "~/Documents/meeting_notes")
   "Directory where new meeting notes files are created.")
 
-(defun my/create-meeting-notes-file ()
+(defun elamdf/create-meeting-notes-file ()
   "Create a new Org file in `meeting-notes-dir`, insert and expand the `meet` snippet."
   (interactive)
   (let* ((default-directory meeting-notes-dir)
@@ -70,7 +70,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
       (yas-expand))
     (switch-to-buffer buf)))
 
-(defun my/rename-meeting-notes-file-maybe ()
+(defun elamdf/rename-meeting-notes-file-maybe ()
   "If the just-finished YASnippet had key 'meeting', rename the file."
         (save-excursion
           (goto-char (point-min))
@@ -89,7 +89,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                   (message "Renamed and switched to: %s" new-name)))))))
 
 
-(defun my/insert-org-participant-tags ()
+(defun elamdf/insert-org-participant-tags ()
   "Prompt for participant names, add new ones to the file, and return a #+TAGS: line as a string."
   (let* ((file "~/.org-participants.txt")
          (existing (if (file-exists-p file)
@@ -114,20 +114,20 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
     tag-line))  ;; Return this string instead of inserting
 
 
-(defvar my/org-quotes
+(defvar elamdf/org-quotes
   '("\“All you have to do is write one true sentence. Write the truest sentence that you know.\” Ernest Hemingway"))
 
 
-(defun my/show-random-org-quote ()
+(defun elamdf/show-random-org-quote ()
   "Display a random quote when a new Org file is opened."
   (when (and buffer-file-name
              (string-equal (file-name-extension buffer-file-name) "org")
              (not (file-exists-p buffer-file-name)))
-    (message "%s" (nth (random (length my/org-quotes)) my/org-quotes))))
+    (message "%s" (nth (random (length elamdf/org-quotes)) elamdf/org-quotes))))
 
 
 
-(defun my/ensure-ollama-running (&rest args)
+(defun elamdf/ensure-ollama-running (&rest args)
   "Start `ollama serve` if it's not already running."
   (unless (get-process "ollama")
     (let ((proc (start-process-shell-command
@@ -135,12 +135,12 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                  "pgrep -f 'ollama serve' || ollama serve")))
       (set-process-query-on-exit-flag proc nil))))
 
-(defun my/org-project-files ()
-  "Return a list of all .org files in `my/org-projects-dir`."
-  (directory-files-recursively my/org-projects-dir "\\.org$"))
+(defun elamdf/org-project-files ()
+  "Return a list of all .org files in `elamdf/org-projects-dir`."
+  (directory-files-recursively elamdf/org-projects-dir "\\.org$"))
 
 
-(defun my/zotero-latest-capture-string ()
+(defun elamdf/zotero-latest-capture-string ()
 
   "Return an Org entry string with title, authors, and tag from the most recently added Zotero item."
   (let* ((query
@@ -210,5 +210,30 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
        (setq this-command 'hs-global-show))
       (_ (hs-hide-all))))
 
+(defun elamdf/org-word-count ()
+  "Count words in region/buffer, estimate pages, and reading time.
+Excludes lines beginning with * or #. Prints result in echo area."
+  (interactive)
+  (let* ((start (if (use-region-p) (region-beginning) (point-min)))
+         (end (if (use-region-p) (region-end) (point-max)))
+         (word-count
+          (save-excursion
+            (goto-char start)
+            (let ((count 0)
+                  (inhibit-field-text-motion t))
+              (while (< (point) end)
+                (beginning-of-line)
+                (unless (looking-at-p "^[*#<]")
+                  (let ((line-end (line-end-position)))
+                    (while (re-search-forward "\\w+\\W*" line-end t)
+                      (setq count (1+ count)))))
+                (forward-line 1))
+              count)))
+         (words-per-page 400)
+         (reading-speed 215)
+         (page-count (/ (+ word-count words-per-page -1) words-per-page))
+         (reading-time (/ (+ word-count reading-speed -1) reading-speed)))
+    (message "%d words, ~%d pages, ~%d min read"
+             word-count page-count reading-time)))
 
 (provide 'user)
