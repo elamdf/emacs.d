@@ -256,17 +256,6 @@
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
   (use-package company)
-
-  ;; (use-package ivy-rich :after ivy :init (ivy-rich-mode 1))
-  ;; (use-package counsel
-  ;;   :bind (("C-M-j" . counsel-switch-buffer)
-  ;;           ("M-x"   . counsel-M-x)
-  ;;           ("C-x C-f" . counsel-find-file)
-  ;;           :map minibuffer-local-map
-  ;;           ("C-r" . counsel-minibuffer-history))
-  ;;   :cus
-  ;; tom (counsel-linux-app-format-function #'counsel-linux-app-format-function-name-only)
-  ;; :config (counsel-mode 1))
   (use-package doom-themes :init (load-theme 'doom-palenight t))
   (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
   (setq mac-command-modifier 'meta)
@@ -308,7 +297,7 @@
   (use-package projectile
     :diminish projectile-mode
     :config (projectile-mode)
-    :custom (projectile-completion-system 'ivy)
+    :custom (projectile-completion-system 'default)
     :bind-keymap ("C-c p" . projectile-command-map)
     :init
     (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
@@ -324,6 +313,10 @@
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize))
 #+END_SRC
+
+
+
+
 * Language & LSP Support
 #+BEGIN_SRC emacs-lisp
   (use-package lsp-mode
@@ -653,4 +646,5 @@ to get cleaner fonts
 
 
 * External dependencies I remember adding
+=rust-analyzer=
 ** TODO update this by doing an install from a fresh mac/windows machine
