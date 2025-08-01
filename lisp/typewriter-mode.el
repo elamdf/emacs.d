@@ -1,4 +1,4 @@
-;;; typewriter-mode.el --- Typewriter overlay minor mode for Org -*- lexical-binding: t; -*-
+;;; typewriter-mode.el --- A major mode to help draft things to be written on a typewriter -*- lexical-binding: t; -*-
 
 (defvar-local typewriter--font nil)
 (defvar-local typewriter--paper-size 'letter)
@@ -14,9 +14,6 @@
 (defvar font-dims-mm
   '(("Hermes 3000" . (2.56 . 4.27))) ; seems reasonable
   "The character (width, line height) of a monospace typewriter font in mm")
-
-
-
 
 (defun line-separator-insert-overlays (n)
   (save-excursion
@@ -38,7 +35,7 @@
         (setq line-number (1+ line-number))))))
 
 (defun line-separator--refresh (&rest _)
-  (line-separator-insert-overlays typewriter--lines-per-page)) ;; Default refresh to every 10 lines; customize as needed
+  (line-separator-insert-overlays typewriter--lines-per-page))
 
 (defun typewriter--parse-params ()
   "Parse Org-style #+FONT and #+PAPER_SIZE headers in buffer."
@@ -55,7 +52,7 @@
 
 
 (defun typewriter--apply-style ()
-  "Apply fill-column and font settings."
+  "Apply compute and apply pagebreak overlays and enforce page width via auto-fill-mode."
   ;; (when typewriter--font
   ;;   (face-remap-add-relative 'default :family typewriter--font))
   (let ((line-size-mm (cdr (assoc (symbol-name typewriter--paper-size) paper-dims-mm))))
