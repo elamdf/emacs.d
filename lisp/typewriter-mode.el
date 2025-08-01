@@ -1,18 +1,44 @@
 ;;; typewriter-mode.el --- Typewriter overlay minor mode for Org -*- lexical-binding: t; -*-
 
-n(defvar-local typewriter--font nil)
+(defvar-local typewriter--font nil)
 (defvar-local typewriter--paper-size 'letter)
+(defvar-local typewriter--chars-per-line 70)
+(defvar-local typewriter--lines-per-page 10)
 
-(defvar paper-width-mm
-  '(("a2_env" . 146.05)
-    ("a4" . 210))
+(defvar paper-dims-mm
+  '(("a2_env" . (146.05 . 111.125))
+    ("a4" . (215.9 . 296.926)))
+  "Mapping of paper width, height names to mm width and height.")
 
 
-  "Mapping of paper size names to mm width.")
+(defvar font-dims-mm
+  '(("Hermes 3000" . (2.56 . 4.27))) ; seems reasonable
+  "The character (width, line height) of a monospace typewriter font in mm")
 
-(defvar font-width-mm
-  '(("Hermes 3000" . 2.56)) ; seems reasonable
-  "The character width of a monospace typewriter font in mm")
+
+
+
+(defun line-separator-insert-overlays (n)
+  (save-excursion
+    (goto-char (point-min))
+    (let ((line-number 1))
+      (while (not (eobp))
+        (let* ((ovs (overlays-in (line-beginning-position) (line-end-position))))
+          (if (and (/= line-number 1) (zerop (% line-number n)))
+              (if (null ovs)
+                  (let* ((pos (line-beginning-position))
+                         (ov (make-overlay pos pos)))
+                    (overlay-put ov 'before-string (propertize "------------\n" 'face 'shadow)))
+                )
+            (dolist (ov ovs)
+              (delete-overlay ov))
+            )
+          )
+        (forward-line 1)
+        (setq line-number (1+ line-number))))))
+
+(defun line-separator--refresh (&rest _)
+  (line-separator-insert-overlays typewriter--lines-per-page)) ;; Default refresh to every 10 lines; customize as needed
 
 (defun typewriter--parse-params ()
   "Parse Org-style #+FONT and #+PAPER_SIZE headers in buffer."
@@ -27,28 +53,37 @@ n(defvar-local typewriter--font nil)
             ("PAPER_SIZE" (setq typewriter--paper-size (intern val)))))))))
 
 
+
 (defun typewriter--apply-style ()
   "Apply fill-column and font settings."
   ;; (when typewriter--font
   ;;   (face-remap-add-relative 'default :family typewriter--font))
-  (let ((mm-per-line (cdr (assoc (symbol-name typewriter--paper-size) paper-width-mm))))
-    (let ((char-width-mm (cdr (assoc (symbol-name typewriter--font) font-width-mm))))
-      (when (and mm-per-line char-width-mm)
-        (set-fill-column (floor (/ mm-per-line char-width-mm))))))
+  (let ((line-size-mm (cdr (assoc (symbol-name typewriter--paper-size) paper-dims-mm))))
+    (let ((char-size-mm (cdr (assoc (symbol-name typewriter--font) font-dims-mm))))
+      (when (and line-size-mm char-size-mm)
+        (setq typewriter--chars-per-line (floor (/ (car line-size-mm) (car char-size-mm))))
+        (setq typewriter--lines-per-page (floor (/ (cdr line-size-mm) (cdr char-size-mm))))
+        )))
+  (set-fill-column typewriter--chars-per-line)
+  (line-separator--refresh)
   (auto-fill-mode t)
   )
+
+(add-hook 'after-change-functions #'(lambda (&rest _)
+                                      (if (eq major-mode 'typewriter-mode) (line-separator--refresh))))
 
 
 ;;;###autoload
 (define-derived-mode typewriter-mode text-mode "🪶 typewriter"
   "Major mode for drafting typewriter text."
-    )
+  )
 
 (add-hook 'typewriter-mode-hook
           (lambda ()
             (progn
-                (typewriter--parse-params)
-                (typewriter--apply-style))
+              (typewriter--parse-params)
+              (typewriter--apply-style))
+
             ))
 (add-hook 'typewriter-mode-hook #'auto-fill-mode)
 
