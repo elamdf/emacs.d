@@ -26,7 +26,7 @@
 
   (add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
   (require 'user)                         ; personal helpers
-
+(require 'typewriter-mode)
 #+END_SRC
 * Package Management
 #+BEGIN_SRC emacs-lisp
