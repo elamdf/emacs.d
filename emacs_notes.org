@@ -1,6 +1,8 @@
 * Elam's `emacs` notes
+=occur= mode puts matching lines in a buffer and lets you operate on them and have it reflect
 
 ** Kill Ring
+
 
 
 * Useful keybindings table
