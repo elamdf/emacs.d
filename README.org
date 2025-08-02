@@ -6,7 +6,6 @@
   (setq inhibit-startup-message t)
   (shell-command "git submodule update --init")
   (when (display-graphic-p)
-
     (setq visible-bell t)                 ; no audible bell
     (setq split-width-threshold 1)        ; prefer vertical splits
     (scroll-bar-mode -1)                  ; hide scroll bar
@@ -14,9 +13,16 @@
     (tooltip-mode   -1)                   ; hide tooltips
     (set-fringe-mode 10)                  ; extra margin
     (menu-bar-mode   -1)                  ; hide menu bar
-    (set-face-attribute 'default nil :font "Fira Code Retina" :height 140)
-    (load-theme 'tango-dark))
+    (defvar my/fixed-width-font  "Fira Code Retina"
+      "The font to use for monospaced (fixed width) text.")
+    (defvar my/variable-width-font "Iosevka Aile"
+      "The font to use for variable-pitch (document) text.")
+    (set-face-attribute 'default nil :font my/fixed-width-font :height 140))
+
 #+END_SRC
+
+#+RESULTS:
+
 * Personal Modules & Paths
 #+BEGIN_SRC emacs-lisp
   ;; Load personal machine‑specific tweaks
@@ -70,6 +76,44 @@
     (add-hook hook (lambda () (display-line-numbers-mode 0))))
 
 #+END_SRC
+* UI, Completion & Navigation
+#+BEGIN_SRC emacs-lisp
+  (use-package company)
+  (use-package doom-themes :init (load-theme 'doom-palenight t))
+  (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
+  (setq mac-command-modifier 'meta)
+  (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
+  (setq-default indent-tabs-mode nil)
+  (use-package markdown-mode
+    :mode ("README\\.md\\'" . gfm-mode)
+    :init (setq markdown-command "multimarkdown")
+    :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
+  (defun elamdf/markdown-no-comment-start ()
+    (setq-local comment-start nil))
+  (add-hook 'markdown-mode-hook #'elamdf/markdown-no-comment-start)
+
+  ;; casual
+  (use-package general)
+  (use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
+    :config
+    (require 'casual-calc)
+    (require 'casual-dired)
+    (require 'casual-agenda)
+    (require 'casual-image)
+    (require 'casual-ibuffer)
+    (require 'casual-info)
+    (require 'casual-make)
+    :general
+    (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
+    (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
+    (:keymaps 'calc-mode-map "C-o" 'casual-calc-tmenu)
+    (:keymaps 'dired-mode-map "C-o" 'casual-dired-tmenu)
+    (:keymaps 'make-mode-map "C-o" 'casual-make-tmenu)
+    (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
+
+#+END_SRC
+
+
 * Completion
 #+begin_src emacs-lisp
   (use-package vertico
@@ -253,45 +297,6 @@
 
 #+RESULTS:
 
-* UI, Completion & Navigation
-#+BEGIN_SRC emacs-lisp
-  (use-package company)
-  (use-package doom-themes :init (load-theme 'doom-palenight t))
-  (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
-  (setq mac-command-modifier 'meta)
-  (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
-  (setq-default indent-tabs-mode nil)
-  (use-package markdown-mode
-    :mode ("README\\.md\\'" . gfm-mode)
-    :init (setq markdown-command "multimarkdown")
-    :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
-  (defun my/markdown-no-comment-start ()
-    (setq-local comment-start nil))
-  (add-hook 'markdown-mode-hook #'my/markdown-no-comment-start)
-
-  ;; casual
-  (use-package general)
-  (use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
-    :config
-    (require 'casual-calc)
-    (require 'casual-dired)
-    (require 'casual-agenda)
-    (require 'casual-image)
-    (require 'casual-ibuffer)
-    (require 'casual-info)
-    (require 'casual-make)
-    :general
-    (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
-    (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
-    (:keymaps 'calc-mode-map "C-o" 'casual-calc-tmenu)
-    (:keymaps 'dired-mode-map "C-o" 'casual-dired-tmenu)
-    (:keymaps 'make-mode-map "C-o" 'casual-make-tmenu)
-    (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
-
-#+END_SRC
-
-#+RESULTS:
-
 * Project & Version Control
 #+BEGIN_SRC emacs-lisp
   (use-package projectile
@@ -313,7 +318,6 @@
   (when (memq window-system '(mac ns x))
     (exec-path-from-shell-initialize))
 #+END_SRC
-
 
 
 
@@ -444,63 +448,70 @@ Systemverilog stuff
 
 #+end_src
 
-
 * Org Capture bindings
 #+begin_src emacs-lisp
-  (setq org-capture-templates
-        '(("r" "Read" entry
-           (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
+      (setq org-capture-templates
+            '(("r" "Read" entry
+               (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+               "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
 
 
-          ("w" "Watch" entry
-           (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
-           ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
+              ("w" "Watch" entry
+               (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+               ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
 
-           "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
+               "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
 
-          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
-           "* TODO %U %i %?" :empty-lines-after 1)
+              ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+               "* TODO %U %i %?" :empty-lines-after 1)
 
-          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
-           "* %U %i %?" :empty-lines-after 1)
-          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
-           "* IDEA %U %?" :empty-lines-after 1)
-          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
-           "* %U \"%i%?\"" :empty-lines-after 1)
-          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* READ %(elamdf/zotero-latest-capture-string)
-  - Entered on %U
-  %?" :empty-lines-after 1)
-          ("e" "Elfeed article" entry
-           (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-           "* [[%:link][%:description]]
-          :PROPERTIES:
-          :LINK: %:link
-          :AUTHOR: %:authors
-          :END: \n%?" :empty-lines-after 1)))
-  (defun elamdf/org-capture-elfeed ()
-    (interactive)
-    (org-capture nil "e"))
-  (setq org-agenda-sorting-strategy
-        '((agenda user-defined-up) (todo user-defined-up)
-          (tags urgency-down category-keep) (search category-keep))
-        )
-  (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
+              ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+               "* %U %i %?" :empty-lines-after 1)
+              ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
+               "* IDEA %U %?" :empty-lines-after 1)
+              ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+               "* %U \"%i%?\"" :empty-lines-after 1)
+              ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+               "* READ %(elamdf/zotero-latest-capture-string)
+      - Entered on %U
+      %?" :empty-lines-after 1)
+              ("e" "Elfeed article" entry
+               (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+               "* [[%:link][%:description]]
+              :PROPERTIES:
+              :LINK: %:link
+              :AUTHOR: %:authors
+              :END: \n%?" :empty-lines-after 1)))
+      (defun elamdf/org-capture-elfeed ()
+        (interactive)
+        (org-capture nil "e"))
+      (setq org-agenda-sorting-strategy
+            '((agenda user-defined-up) (todo user-defined-up)
+              (tags urgency-down category-keep) (search category-keep))
+            )
+      (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
 
 
 
-  (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
-  (use-package zotxt :after org)
-  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)"  "IDEA(i)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
-  (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
-  (setq org-src-fontify-natively t)
-  (use-package htmlize)
-  (setq org-export-publishing-directory "./assets")
-  (use-package ox-reveal)
+      (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
+      (use-package zotxt :after org)
+      (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
+      (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
+      (setq org-src-fontify-natively t)
+      (use-package htmlize)
+      (setq org-export-publishing-directory "./assets")
+  (org-babel-do-load-languages
+   'org-babel-load-languages
+   '((python . t)))
+
+      (use-package ox-reveal) ; reveal js presentations!n
+(setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+    (setq org-hide-emphasis-markers t)
+
 #+END_SRC
 
 #+RESULTS:
+: t
 
 
 * Keybindings & Shortcuts
@@ -612,16 +623,25 @@ Systemverilog stuff
 #+END_SRC
 * RSS & Elfeed
 #+BEGIN_SRC emacs-lisp
-  (use-package elfeed)
-  (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
-                       "https://semianalysis.com/feed/"
-                       "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
-                       "https://www.chinatalk.media/feed"
-                       "https://www.sinification.com/feed"
-                       "https://elam.day/post/atom.xml"
-                       "https://irreal.org/blog/?feed=rss2"))
+      (use-package elfeed)
+      (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
+                           "https://semianalysis.com/feed/"
+                           "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
+                           "https://www.chinatalk.media/feed"
+                           "https://geohot.github.io/blog/feed"
+                           "https://www.sinification.com/feed"
+                           "https://elam.day/post/atom.xml"
+                           "https://irreal.org/blog/?feed=rss2"))
+
+  (add-hook elfeed-search-mode #'(lambda () ((setq-local visual-fill-column-center-text t))))
+
   (define-key elfeed-show-mode-map (kbd "w") #'elamdf/org-capture-elfeed)
 #+END_SRC
+
+#+RESULTS:
+: elamdf/org-capture-elfeed
+
+
 * Miscellaneous
 #+BEGIN_SRC emacs-lisp
   ;; Fun motivational quote when opening files
