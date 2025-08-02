@@ -1,5 +1,5 @@
 ;;; typewriter-mode.el --- A major mode to help draft things to be written on a typewriter -*- lexical-binding: t; -*-
-
+(use-package olivetti)
 (defvar-local typewriter--font nil)
 (defvar-local typewriter--paper-size 'letter)
 (defvar-local typewriter--chars-per-line 70)
@@ -32,7 +32,9 @@
             )
           )
         (forward-line 1)
-        (setq line-number (1+ line-number))))))
+        (if (not (string-prefix-p "#+" (thing-at-point 'line)))
+            (setq line-number (1+ line-number)))
+        ))))
 
 (defun line-separator--refresh (&rest _)
   (line-separator-insert-overlays typewriter--lines-per-page))
@@ -72,15 +74,15 @@
 
 ;;;###autoload
 (define-derived-mode typewriter-mode text-mode "🪶 typewriter"
-  "Major mode for drafting typewriter text."
+  "Major mode for drafting typewriter add."
   )
 
 (add-hook 'typewriter-mode-hook
           (lambda ()
             (progn
               (typewriter--parse-params)
-              (typewriter--apply-style))
-
+              (typewriter--apply-style)
+              (olivetti-mode t))
             ))
 (add-hook 'typewriter-mode-hook #'auto-fill-mode)
 
