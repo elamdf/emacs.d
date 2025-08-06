@@ -77,12 +77,21 @@
   "Major mode for drafting typewriter add."
   )
 
+ (defun typewriter--use-typewriter-font ()
+   "Set font to a variable width (proportional) fonts in current buffer"
+   (interactive)
+(setq buffer-face-mode-face '(:family "American typewriter" :height 150))   ; not hermetico but good enough
+   (buffer-face-mode))
+
 (add-hook 'typewriter-mode-hook
           (lambda ()
             (progn
               (typewriter--parse-params)
               (typewriter--apply-style)
-              (olivetti-mode t))
+              (olivetti-mode t)
+              (typewriter--use-typewriter-font)
+
+              )
             ))
 (add-hook 'typewriter-mode-hook #'auto-fill-mode)
 
