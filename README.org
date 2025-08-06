@@ -448,70 +448,84 @@ Systemverilog stuff
 
 #+end_src
 
-* Org Capture bindings
+* Org Capture templates and bindings
 #+begin_src emacs-lisp
-      (setq org-capture-templates
-            '(("r" "Read" entry
-               (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-               "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
 
 
-              ("w" "Watch" entry
-               (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
-               ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
-
-               "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
-
-              ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
-               "* TODO %U %i %?" :empty-lines-after 1)
-
-              ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
-               "* %U %i %?" :empty-lines-after 1)
-              ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
-               "* IDEA %U %?" :empty-lines-after 1)
-              ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
-               "* %U \"%i%?\"" :empty-lines-after 1)
-              ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-               "* READ %(elamdf/zotero-latest-capture-string)
-      - Entered on %U
-      %?" :empty-lines-after 1)
-              ("e" "Elfeed article" entry
-               (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-               "* [[%:link][%:description]]
-              :PROPERTIES:
-              :LINK: %:link
-              :AUTHOR: %:authors
-              :END: \n%?" :empty-lines-after 1)))
-      (defun elamdf/org-capture-elfeed ()
-        (interactive)
-        (org-capture nil "e"))
-      (setq org-agenda-sorting-strategy
-            '((agenda user-defined-up) (todo user-defined-up)
-              (tags urgency-down category-keep) (search category-keep))
-            )
-      (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
+  (setq org-capture-templates
+        '(("r" "Read" entry
+           (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
 
 
+          ("w" "Watch" entry
+           (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
+           ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
 
-      (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
-      (use-package zotxt :after org)
-      (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
-      (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
-      (setq org-src-fontify-natively t)
-      (use-package htmlize)
-      (setq org-export-publishing-directory "./assets")
+           "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
+
+          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+           "* TODO %U %i %?" :empty-lines-after 1)
+
+          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+           "* %U %i %?" :empty-lines-after 1)
+          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
+           "* IDEA %U %?" :empty-lines-after 1)
+          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+           "* %U \"%i%?\"" :empty-lines-after 1)
+          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           "* READ %(elamdf/zotero-latest-capture-string)
+          - Entered on %U
+          %?" :empty-lines-after 1)
+          ("e" "Elfeed article" entry
+           (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+"* [[%:link][%:description]]
+:PROPERTIES:
+:LINK: %:link
+:AUTHOR: %:authors
+:END: \n%?" :empty-lines-after 1)))
+  (defun elamdf/org-capture-elfeed ()
+    (interactive)
+    (org-capture nil "e"))
+  (setq org-agenda-sorting-strategy
+        '((agenda user-defined-up) (todo user-defined-up)
+          (tags urgency-down category-keep) (search category-keep))
+        )
+  (setq org-agenda-cmp-user-defined 'elamdf/compare-todo-status)
+
+  (defun elamdf/capture-open-message ()
+    (progn (message "\"if one holds onto every glimmer of genius for years, then even the dullest person may look a bit like a genius himself\"") ()))
+  (add-hook 'org-capture-mode-hook #'elamdf/capture-open-message)
+
+
+
+  (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
+  (use-package zotxt :after org)
+  (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
+  (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
+  (setq org-src-fontify-natively t)
+  (use-package htmlize)
+  (setq org-export-publishing-directory "./assets")
   (org-babel-do-load-languages
    'org-babel-load-languages
    '((python . t)))
 
-      (use-package ox-reveal) ; reveal js presentations!n
-(setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
-    (setq org-hide-emphasis-markers t)
+  (use-package ox-reveal) ; reveal js presentations!n
+  (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+  (setq org-hide-emphasis-markers t)
+
+  (use-package org-present)
+
+  (add-hook 'org-present-mode-hook #'(lambda ()
+                                       (progn
+                                         (olivetti-mode t)
+                                         (visual-line-mode t))
+                                       ))
 
 #+END_SRC
 
 #+RESULTS:
-: t
+| #[nil ((progn (olivetti-mode t) (visual-line-mode t))) nil] |
 
 
 * Keybindings & Shortcuts
@@ -623,19 +637,20 @@ Systemverilog stuff
 #+END_SRC
 * RSS & Elfeed
 #+BEGIN_SRC emacs-lisp
-      (use-package elfeed)
-      (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
-                           "https://semianalysis.com/feed/"
-                           "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
-                           "https://www.chinatalk.media/feed"
-                           "https://geohot.github.io/blog/feed"
-                           "https://www.sinification.com/feed"
-                           "https://elam.day/post/atom.xml"
-                           "https://irreal.org/blog/?feed=rss2"))
+        (use-package elfeed)
+(use-package olivetti) ; nice formatting for text
+        (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
+                             "https://semianalysis.com/feed/"
+                             "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
+                             "https://www.chinatalk.media/feed"
+                             "https://geohot.github.io/blog/feed"
+                             "https://www.sinification.com/feed"
+                             "https://elam.day/post/atom.xml"
+                             "https://irreal.org/blog/?feed=rss2"))
 
-  (add-hook elfeed-search-mode #'(lambda () ((setq-local visual-fill-column-center-text t))))
+  (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
 
-  (define-key elfeed-show-mode-map (kbd "w") #'elamdf/org-capture-elfeed)
+    (define-key elfeed-show-mode-map (kbd "w") #'elamdf/org-capture-elfeed)
 #+END_SRC
 
 #+RESULTS:
