@@ -1,5 +1,5 @@
 ;; system-specific paths
-(defvar projects-dir
+(defvar elamdf/projects-dir
   (expand-file-name "~/Documents/projects/")
   "Root directory for my project-related Org files.")
 (defvar meetings-dir

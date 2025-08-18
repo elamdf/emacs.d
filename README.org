@@ -3,21 +3,23 @@
 
 * Startup & UI Basics
 #+BEGIN_SRC emacs-lisp
-  (setq inhibit-startup-message t)
-  (shell-command "git submodule update --init")
-  (when (display-graphic-p)
-    (setq visible-bell t)                 ; no audible bell
-    (setq split-width-threshold 1)        ; prefer vertical splits
-    (scroll-bar-mode -1)                  ; hide scroll bar
-    (tool-bar-mode   -1)                  ; hide toolbar
-    (tooltip-mode   -1)                   ; hide tooltips
-    (set-fringe-mode 10)                  ; extra margin
-    (menu-bar-mode   -1)                  ; hide menu bar
-    (defvar my/fixed-width-font  "Fira Code Retina"
-      "The font to use for monospaced (fixed width) text.")
-    (defvar my/variable-width-font "Iosevka Aile"
-      "The font to use for variable-pitch (document) text.")
-    (set-face-attribute 'default nil :font my/fixed-width-font :height 140))
+    (setq inhibit-startup-message t)
+    (shell-command "git submodule update --init")
+  ;; we launch in daemon mode, but want these enabled for when we attach
+  ;;  (when (display-graphic-p)
+      (setq visible-bell t)                 ; no audible bell
+      (setq split-width-threshold 1)        ; prefer vertical splits
+      (scroll-bar-mode -1)                  ; hide scroll bar
+      (tool-bar-mode   -1)                  ; hide toolbar
+      (tooltip-mode   -1)                   ; hide tooltips
+      (set-fringe-mode 10)                  ; extra margin
+      (menu-bar-mode   -1)                  ; hide menu bar
+      (defvar my/fixed-width-font  "Fira Code Retina"
+        "The font to use for monospaced (fixed width) text.")
+      (defvar my/variable-width-font "Iosevka Aile"
+        "The font to use for variable-pitch (document) text.")
+      (set-face-attribute 'default nil :font my/fixed-width-font :height 140)
+  ;;)
 
 #+END_SRC
 
@@ -31,9 +33,20 @@
   (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
 
   (add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
+  (add-to-list 'load-path (concat user-emacs-directory "/flyover"))
+
+
   (require 'user)                         ; personal helpers
-(require 'typewriter-mode)
+  (require 'typewriter-mode)
+
+  ;; make sure things are available on PATH
+  (use-package exec-path-from-shell)
+  (exec-path-from-shell-initialize)
 #+END_SRC
+
+#+RESULTS:
+: typewriter-mode
+
 * Package Management
 #+BEGIN_SRC emacs-lisp
   (defvar bootstrap-version)
@@ -72,7 +85,7 @@
   (add-hook 'before-save-hook #'delete-trailing-whitespace)
   (use-package command-log-mode)
   ;; Disable line numbers where they get in the way
-  (dolist (hook '(org-mode-hook term-mode-hook shell-mode-hook treemacs-mode-hook eshell-mode-hook))
+  (dolist (hook '(org-mode-hook term-mode-hook shell-mode-hook eshell-mode-hook))
     (add-hook hook (lambda () (display-line-numbers-mode 0))))
 
 #+END_SRC
@@ -116,182 +129,85 @@
 
 * Completion
 #+begin_src emacs-lisp
+  ;; --- UI: keep completion in the minibuffer ---
   (use-package vertico
-    :demand t                             ; Otherwise won't get loaded immediately
-    :straight (vertico :files (:defaults "extensions/*") ; Special recipe to load extensions conveniently
-                       :includes (vertico-indexed
-                                  vertico-flat
-                                  vertico-grid
-                                  vertico-mouse
-                                  vertico-quick
-                                  vertico-buffer
-                                  vertico-repeat
-                                  vertico-reverse
-                                  vertico-directory
-                                  vertico-multiform
-                                  vertico-unobtrusive))
-    :general
-    (:keymaps '(normal insert visual motion)
-              "M-." #'vertico-repeat)
-    (:keymaps 'vertico-map
-              "<tab>" #'vertico-insert ; Set manually otherwise setting `vertico-quick-insert' overrides this
-              "<escape>" #'minibuffer-keyboard-quit
-              "?" #'minibuffer-completion-help
-              "C-M-n" #'vertico-next-group
-              "C-M-p" #'vertico-previous-group
-              ;; Multiform toggles
-              "<backspace>" #'vertico-directory-delete-char
-              "C-w" #'vertico-directory-delete-word
-              "C-<backspace>" #'vertico-directory-delete-word
-              "RET" #'vertico-directory-enter
-              "C-i" #'vertico-quick-insert
-              "C-o" #'vertico-quick-exit
-              "M-o" #'kb/vertico-quick-embark
-              "M-G" #'vertico-multiform-grid
-              "M-F" #'vertico-multiform-flat
-              "M-R" #'vertico-multiform-reverse
-              "M-U" #'vertico-multiform-unobtrusive
-              "C-l" #'kb/vertico-multiform-flat-toggle)
-    :hook ((rfn-eshadow-update-overlay . vertico-directory-tidy) ; Clean up file path when typing
-           (minibuffer-setup . vertico-repeat-save)) ; Make sure vertico state is saved
-    :custom
-    (vertico-count 13)
-    (vertico-resize t)
-    (vertico-cycle nil)
-    ;; Extensions
-    (vertico-grid-separator "       ")
-    (vertico-grid-lookahead 50)
-    (vertico-buffer-display-action '(display-buffer-reuse-window))
-    (vertico-multiform-categories
-     '((file reverse)
-       (consult-grep buffer)
-       (consult-location)
-       (imenu buffer)
-       (library reverse indexed)
-       (org-roam-node reverse indexed)
-       (t reverse)))
-    (vertico-multiform-commands
-     '(("flyspell-correct-*" grid reverse)
-       (org-refile grid reverse indexed)
-       (consult-yank-pop indexed)
-       (consult-flycheck)
-       (consult-lsp-diagnostics)))
-    :init
-    (defun kb/vertico-multiform-flat-toggle ()
-      "Toggle between flat and reverse."
-      (interactive)
-      (vertico-multiform--display-toggle 'vertico-flat-mode)
-      (if vertico-flat-mode
-          (vertico-multiform--temporary-mode 'vertico-reverse-mode -1)
-        (vertico-multiform--temporary-mode 'vertico-reverse-mode 1)))
-    (defun kb/vertico-quick-embark (&optional arg)
-      "Embark on candidate using quick keys."
-      (interactive)
-      (when (vertico-quick-jump)
-        (embark-act arg)))
+    :init (vertico-mode 1))
 
-    ;; Workaround for problem with `tramp' hostname completions. This overrides
-    ;; the completion style specifically for remote files! See
-    ;; https://github.com/minad/vertico#tramp-hostname-completion
-    (defun kb/basic-remote-try-completion (string table pred point)
-      (and (vertico--remote-p string)
-           (completion-basic-try-completion string table pred point)))
-    (defun kb/basic-remote-all-completions (string table pred point)
-      (and (vertico--remote-p string)
-           (completion-basic-all-completions string table pred point)))
-    (add-to-list 'completion-styles-alist
-                 '(basic-remote           ; Name of `completion-style'
-                   kb/basic-remote-try-completion kb/basic-remote-all-completions nil))
-    :config
-    (vertico-mode)
-    ;; Extensions
-    (vertico-multiform-mode)
-
-    ;; Prefix the current candidate with “» ”. From
-    ;; https://github.com/minad/vertico/wiki#prefix-current-candidate-with-arrow
-    (advice-add #'vertico--format-candidate :around
-                (lambda (orig cand prefix suffix index _start)
-                  (setq cand (funcall orig cand prefix suffix index _start))
-                  (concat
-                   (if (= vertico--index index)
-                       (propertize "» " 'face 'vertico-current)
-                     "  ")
-                   cand))))
+  ;; --- Matching: nice flexible patterns (optional but popular) ---
   (use-package orderless
-    :custom
-    (completion-styles '(orderless))
-    (completion-category-defaults nil)    ; I want to be in control!
-    (completion-category-overrides
-     '((file (styles basic-remote ; For `tramp' hostname completion with `vertico'
-                     orderless
-                     ))
-       ))
-
-    (orderless-component-separator 'orderless-escapable-split-on-space)
-    (orderless-matching-styles
-     '(orderless-literal
-       orderless-prefixes
-       orderless-initialism
-       orderless-regexp
-       ;; orderless-flex
-       ;; orderless-strict-leading-initialism
-       ;; orderless-strict-initialism
-       ;; orderless-strict-full-initialism
-       ;; orderless-without-literal          ; Recommended for dispatches instead
-       ))
-    (orderless-style-dispatchers
-     '(prot-orderless-literal-dispatcher
-       prot-orderless-strict-initialism-dispatcher
-       prot-orderless-flex-dispatcher))
     :init
-    (defun orderless--strict-*-initialism (component &optional anchored)
-      "Match a COMPONENT as a strict initialism, optionally ANCHORED.
-  The characters in COMPONENT must occur in the candidate in that
-  order at the beginning of subsequent words comprised of letters.
-  Only non-letters can be in between the words that start with the
-  initials.
+    (setq completion-styles '(orderless basic)
+          completion-category-defaults nil
+          ;; Keep file completion sensible (don’t split paths on /)
+          completion-category-overrides '((file (styles basic partial-completion)))))
 
-  If ANCHORED is `start' require that the first initial appear in
-  the first word of the candidate.  If ANCHORED is `both' require
-  that the first and last initials appear in the first and last
-  words of the candidate, respectively."
-      (orderless--separated-by
-          '(seq (zero-or-more alpha) word-end (zero-or-more (not alpha)))
-        (cl-loop for char across component collect `(seq word-start ,char))
-        (when anchored '(seq (group buffer-start) (zero-or-more (not alpha))))
-        (when (eq anchored 'both)
-          '(seq (zero-or-more alpha) word-end (zero-or-more (not alpha)) eol))))
+  ;; --- Sources/commands + preview control ---
+  (use-package consult
+    :bind (("C-M-s"   . consult-line)     ; search in buffer
+           ("C-c p s r" . consult-ripgrep)  ; project/file tree search
+           ("M-i"   . consult-imenu))   ; symbols in buffer
+    :init
+    ;; Keep everything in the minibuffer until *you* ask to preview:
+    ;;   - nil = no automatic preview
+    ;;   - "M-." = press M-. to preview current candidate
+    (setq consult-preview-key "M-."))
+  ;; If you want zero preview ever, use:
+  ;; (setq consult-preview-key nil)
 
-    (defun orderless-strict-initialism (component)
-      "Match a COMPONENT as a strict initialism.
-  This means the characters in COMPONENT must occur in the
-  candidate in that order at the beginning of subsequent words
-  comprised of letters.  Only non-letters can be in between the
-  words that start with the initials."
-      (orderless--strict-*-initialism component))
+    ;;; --- Keep completion in minibuffer & tame previews ---
+  (vertico-mode 1)                            ; or (fido-vertical-mode 1)
+  (setq completion-auto-help nil)             ; don't pop *Completions*
+  (setq consult-preview-key nil)              ; no auto preview panes
+  (global-set-key (kbd "C-g") #'keyboard-escape-quit)
 
-    (defun prot-orderless-literal-dispatcher (pattern _index _total)
-      "Literal style dispatcher using the equals sign as a suffix.
-  It matches PATTERN _INDEX and _TOTAL according to how Orderless
-  parses its input."
-      (when (string-suffix-p "=" pattern)
-        `(orderless-literal . ,(substring pattern 0 -1))))
+    ;;; --- Better matching (optional, popular) ---
+  ;; (use-package orderless
+  ;;   :init (setq completion-styles '(orderless basic)
+  ;;              completion-category-defaults nil
+  ;;              completion-category-overrides '((file (styles basic partial-completion)))))
 
-    (defun prot-orderless-strict-initialism-dispatcher (pattern _index _total)
-      "Leading initialism  dispatcher using the comma suffix.
-  It matches PATTERN _INDEX and _TOTAL according to how Orderless
-  parses its input."
-      (when (string-suffix-p "," pattern)
-        `(orderless-strict-initialism . ,(substring pattern 0 -1))))
+    ;;; --- Consult takes over buffer switching ---
+  (global-set-key (kbd "C-x b")   #'consult-buffer)
+  (global-set-key (kbd "C-x 4 b") #'consult-buffer-other-window)
+  (global-set-key (kbd "C-x 5 b") #'consult-buffer-other-frame)
 
-    (defun prot-orderless-flex-dispatcher (pattern _index _total)
-      "Flex  dispatcher using the tilde suffix.
-  It matches PATTERN _INDEX and _TOTAL according to how Orderless
-  parses its input."
-      (when (string-suffix-p "." pattern)
-        `(orderless-flex . ,(substring pattern 0 -1)))))
+  ;; Bonus: project-aware buffer list on a separate key
+  (global-set-key (kbd "C-x B")   #'consult-project-buffer)
 
-  (use-package consult)
+    ;;; --- Files: pick ONE of these approaches ---
+
+  ;; Option A: Keep classic find-file (already minibuffer via Vertico)
+  ;; (global-set-key (kbd "C-x C-f") #'find-file)
+
+  ;; Option B: Replace with a fast file finder (fd recommended)
+  ;; Requires 'fd' in PATH. Falls back to 'find' with consult-find.
+  (when (executable-find "fd")
+    (global-set-key (kbd "C-x C-f") #'consult-fd))
+  ;; If you prefer POSIX find:
+  ;; (global-set-key (kbd "C-x C-f") #'consult-find)
+
+  ;; Handy extras
+  (global-set-key (kbd "C-x C-r") #'consult-recent-file)   ; open recent files
+  (global-set-key (kbd "M-g g")   #'consult-goto-line)     ; nicer goto-line
+  (global-set-key (kbd "C-c s")   #'consult-ripgrep)       ; search project
+
+    ;;; --- Case-insensitive completion for files/buffers (nice QoL) ---
+  (setq read-buffer-completion-ignore-case t
+        read-file-name-completion-ignore-case t
+        completion-ignore-case t)
+
+  (with-eval-after-load 'vertico
+    (require 'vertico-directory)
+    ;; Make Backspace delete the whole folder component, not one char
+    (define-key vertico-map (kbd "DEL") #'vertico-directory-delete-word)
+    ;; Optional: extra directory niceties
+    (define-key vertico-map (kbd "C-l")  #'vertico-directory-up)        ; go up directory
+    (define-key vertico-map (kbd "RET")  #'vertico-directory-enter))    ; enter directory
+
+  (use-package emacs
+    :ensure nil
+    :init
+    (setq tab-always-indent 'complete)) ;; enable tab completionh
 
 #+end_src
 
@@ -313,95 +229,121 @@
   (use-package forge :after magit)
   (use-package pr-review :after magit)
   (setq auth-sources '("\~/.authinfo"))
-  ;; make sure things are available on PATH
-  (use-package exec-path-from-shell)
-  (when (memq window-system '(mac ns x))
-    (exec-path-from-shell-initialize))
+  ;; use consult instead of projectile ripgrep
+    (global-set-key (kbd "C-c p s r") 'consult-ripgrep)
+
 #+END_SRC
 
 
 
 * Language & LSP Support
 #+BEGIN_SRC emacs-lisp
-  (use-package lsp-mode
-    :commands (lsp lsp-deferred)
-    :init   (setq lsp-keymap-prefix "C-c l")
-    :config (lsp-enable-which-key-integration t))
-  (use-package lsp-ui :commands lsp-ui-mode)
-  (add-hook 'python-mode-hook #'lsp-deferred)
-  (use-package tree-sitter)
-  (use-package tree-sitter-langs)
-  (use-package yaml-mode)
-  (require 'tree-sitter)
-  (require 'tree-sitter-langs)
-  (use-package rust-mode
-    :mode "\\.rs\\'"
-    :custom (rust-format-on-save t)
-    :hook (rust-mode . lsp-deferred))
-  (use-package lsp-metals
-    :custom
-    (lsp-metals-server-args
-     '("-J-Dmetals.allow-multiline-string-formatting=off"
-       "-J-Dmetals.icons=unicode"))
-    (lsp-metals-enable-semantic-highlighting t)
-    :hook (scala-mode . lsp-deferred))
-  (use-package calyx-mode
-    :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
-  ;; auto format python stuff
-  (use-package python-black
-    :demand t
-    :after python
-    :hook (python-mode . python-black-on-save-mode-enable-dwim))
+      (use-package eglot
+        :ensure t
+        :hook ((( scala-mode python-mode rust-mode)
+                . eglot-ensure)
+               ((cider-mode eglot-managed-mode) . eglot-disable-in-cider))
+        :preface
+        (defun eglot-disable-in-cider ()
+          (when (eglot-managed-p)
+            (if (bound-and-true-p cider-mode)
+                (progn
+                  (remove-hook 'completion-at-point-functions 'eglot-completion-at-point t)
+                  (remove-hook 'xref-backend-functions 'eglot-xref-backend t))
+              (add-hook 'completion-at-point-functions 'eglot-completion-at-point nil t)
+              (add-hook 'xref-backend-functions 'eglot-xref-backend nil t))))
+        :custom
+        (eglot-autoshutdown t)
+        (eglot-events-buffer-size 0)
+        (eglot-extend-to-xref nil))
 
-  ;; flyover for prettier inline syntax checks
-  (use-package flyover)
-  (add-hook 'flycheck-mode-hook #'flyover-mode)
-  ;; Use theme colors for error/warning/info faces
-  (setq flyover-use-theme-colors t)
+      ;; checks
+      (use-package flycheck)
+      (global-flycheck-mode)
+      ;; flyover for prettier inline syntax checks
+      (require 'flyover)
+      (add-hook 'flycheck-mode-hook #'flyover-mode)
+      (setq flyover-checkers '(flycheck flymake))
 
-  ;; Adjust background lightness (lower values = darker)
-  (setq flyover-background-lightness 45)
 
-  ;; Make icon background darker than foreground
-  (setq flyover-percent-darker 40)
+      ;; Use theme colors for error/warning/info faces
+      (setq flyover-use-theme-colors t)
 
-  (setq flyover-text-tint 'lighter) ;; or 'darker or nil
+      ;; Adjust background lightness (lower values = darker)
+      (setq flyover-background-lightness 45)
 
-  ;; "Percentage to lighten or darken the text when tinting is enabled."
-  (setq flyover-text-tint-percent 50)
-  (setq flyover-levels '(error warning))    ; Show only errors and warnings
+      ;; Make icon background darker than foreground
+      (setq flyover-percent-darker 40)
+
+      (setq flyover-text-tint 'lighter) ;; or 'darker or nil
+
+      ;; "Percentage to lighten or darken the text when tinting is enabled."
+      (setq flyover-text-tint-percent 50)
+      (setq flyover-levels '(error))    ; Show only errors and warnings
+
+    (use-package calyx-mode
+      :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+    (use-package platformio-mode)
+
 #+END_SRC
-Systemverilog stuff
-#+begin_src emacs-lisp
-  (use-package verilog-ext
-    :hook ((verilog-mode . verilog-ext-mode))
-    :init
-    ;; Can also be set through `M-x RET customize-group RET verilog-ext':
-    ;; Comment out/remove the ones you do not need
-    (setq verilog-ext-feature-list
-          '(font-lock
-            xref
-            capf
-            hierarchy
-            eglot
-            lsp
-            flycheck
-            beautify
-            navigation
-            template
-            formatter
-            compilation
-            imenu
-            which-func
-            hideshow
-            typedefs
-            time-stamp
-            block-end-comments
-            ports))
-    :config
-    (verilog-ext-mode-setup))
 
+
+* python lsp stuff
+#+begin_src emacs-lisp
+
+  (use-package python
+    :config
+    ;; Remove guess indent python message
+    (setq python-indent-guess-indent-offset-verbose nil))
+
+  ;; Hide the modeline for inferior python processes.  This is not a necessary
+  ;; package but it's helpful to make better use of the screen real-estate at our
+  ;; disposal. See: https://github.com/hlissner/emacs-hide-mode-line.
+
+  (use-package hide-mode-line
+    :ensure t
+    :defer t
+    :hook (inferior-python-mode . hide-mode-line-mode))
+
+(use-package blacken
+  :ensure t
+  :defer t
+  :custom
+  (blacken-allow-py36 t)
+  (blacken-skip-string-normalization t)
+  :hook (python-mode-hook . blacken-mode))
 #+end_src
+
+* Systemverilog lsp stuff
+#+begin_src emacs-lisp
+    (use-package verilog-ext
+      :hook ((verilog-mode . verilog-ext-mode))
+      :init
+      ;; Can also be set through `M-x RET customize-group RET verilog-ext':
+      ;; Comment out/remove the ones you do not need
+      (setq verilog-ext-feature-list
+            '(font-lock
+              xref
+              capf
+              hierarchy
+              eglot
+              flycheck
+              beautify
+              navigation
+              template
+              formatter
+              compilation
+              imenu
+              which-func
+              hideshow
+              typedefs
+              time-stamp
+              block-end-comments
+              ports))
+      :config
+      (verilog-ext-mode-setup))
+#+end_src
+
 
 * Org Mode Configuration
 
@@ -412,7 +354,7 @@ Systemverilog stuff
         org-fontify-quote-and-verse-blocks t)
   (add-hook 'org-mode-hook #'org-indent-mode)
   (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
-  (setq org-directory projects-dir)
+  (setq org-directory elamdf/projects-dir)
   (setq org-default-notes-file (concat org-directory "/notes.org"))
   (use-package org-tempo :ensure nil :demand t)
   (dolist (tpl '(("sh" . "src sh")
@@ -445,8 +387,13 @@ Systemverilog stuff
   (global-set-key (kbd "C-s") 'isearch-forward-regexp)
   (global-set-key (kbd "C-r") 'isearch-backward-regexp)
 
+  ;; make indentation work properly
+  (setq org-src-tab-acts-natively t)
 
 #+end_src
+
+#+RESULTS:
+: t
 
 * Org Capture templates and bindings
 #+begin_src emacs-lisp
@@ -454,36 +401,36 @@ Systemverilog stuff
 
   (setq org-capture-templates
         '(("r" "Read" entry
-           (file+headline (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+           (file+headline (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Reading List")
            "* READ %^{Title} by %^{Author} %^g: \n - Entered on %U\n  %?")
 
 
           ("w" "Watch" entry
-           (file+headline  (lambda () (expand-file-name "notes.org" projects-dir)) "Watch List")
-           ;; (file+headline (expand-file-name "capture.org" projects-dir) "Watch List")
+           (file+headline  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Watch List")
+           ;; (file+headline (expand-file-name "capture.org" elamdf/projects-dir) "Watch List")
 
            "* WATCH %^{Title} %^g:\n Link: %^{URL}\n  - Entered on %U\n  %?")
 
-          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "TODO todos")
+          ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "TODO todos")
            "* TODO %U %i %?" :empty-lines-after 1)
 
-          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Log")
+          ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Log")
            "* %U %i %?" :empty-lines-after 1)
-          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Ideas")
+          ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Ideas")
            "* IDEA %U %?" :empty-lines-after 1)
-          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Quotes")
+          ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Quotes")
            "* %U \"%i%?\"" :empty-lines-after 1)
-          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
+          ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Reading List")
            "* READ %(elamdf/zotero-latest-capture-string)
-          - Entered on %U
-          %?" :empty-lines-after 1)
+              - Entered on %U
+              %?" :empty-lines-after 1)
           ("e" "Elfeed article" entry
-           (file+olp  (lambda () (expand-file-name "notes.org" projects-dir)) "Reading List")
-"* [[%:link][%:description]]
-:PROPERTIES:
-:LINK: %:link
-:AUTHOR: %:authors
-:END: \n%?" :empty-lines-after 1)))
+           (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Reading List")
+           "* [[%:link][%:description]]
+  :PROPERTIES:
+  :LINK: %:link
+  :AUTHOR: %:authors
+  :END: \n%?" :empty-lines-after 1)))
   (defun elamdf/org-capture-elfeed ()
     (interactive)
     (org-capture nil "e"))
@@ -497,9 +444,13 @@ Systemverilog stuff
     (progn (message "\"if one holds onto every glimmer of genius for years, then even the dullest person may look a bit like a genius himself\"") ()))
   (add-hook 'org-capture-mode-hook #'elamdf/capture-open-message)
 
+  (setq org-agenda-files (directory-files-recursively elamdf/projects-dir "^[a-z0-9]*.org$"))
 
+  (setq org-refile-targets '((nil :maxlevel . 9)
+                             (org-agenda-files :maxlevel . 9)))
+  (setq org-outline-path-complete-in-steps nil)         ; Refile in a single go
+  (setq org-refile-use-outline-path t)                  ; Show full paths for refiling
 
-  (setq org-refile-targets (mapcar (lambda (f) (cons f '(:maxlevel . 3))) (elamdf/org-project-files)))
   (use-package zotxt :after org)
   (setq org-todo-keywords '((sequence "TODO(t)" "WAIT(w@/!)" "WATCH(v)" "READ(r)" "|" "DONE(d!)" "CANCELED(c@)")))
   (setq org-todo-keyword-faces '(("READ" . "dark green") ("IDEA" . "white") ("WATCH" . "dark blue")))
@@ -637,20 +588,21 @@ Systemverilog stuff
 #+END_SRC
 * RSS & Elfeed
 #+BEGIN_SRC emacs-lisp
-        (use-package elfeed)
-(use-package olivetti) ; nice formatting for text
-        (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
-                             "https://semianalysis.com/feed/"
-                             "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
-                             "https://www.chinatalk.media/feed"
-                             "https://geohot.github.io/blog/feed"
-                             "https://www.sinification.com/feed"
-                             "https://elam.day/post/atom.xml"
-                             "https://irreal.org/blog/?feed=rss2"))
+          (use-package elfeed)
+  (use-package olivetti) ; nice formatting for text
+          (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
+                               "https://semianalysis.com/feed/"
+                               "https://taylor.town/feed.xml"
+                               "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
+                               "https://www.chinatalk.media/feed"
+                               "https://geohot.github.io/blog/feed"
+                               "https://www.sinification.com/feed"
+                               "https://elam.day/post/atom.xml"
+                               "https://irreal.org/blog/?feed=rss2"))
 
-  (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
+    (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
 
-    (define-key elfeed-show-mode-map (kbd "w") #'elamdf/org-capture-elfeed)
+      (define-key elfeed-show-mode-map (kbd "w") #'elamdf/org-capture-elfeed)
 #+END_SRC
 
 #+RESULTS:

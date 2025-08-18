@@ -61,3 +61,8 @@
 | C-c C-c                       | normalize (fix) timestamp                   |                | org           |
 | C-c C-TAB                     | show all children                           |                | org           |
 | M-m                           | beginning of text in a line                 | ^              | movement      |
+
+C-c ' opens org src in dedicated buffer
+
+f3 defines macro, f4 ends def or runs last defined macro
+c-x c-k r runs on each selected

@@ -11,7 +11,7 @@ Run this from an `elfeed-entry` buffer."
          (title (elfeed-entry-title entry))
          (link (elfeed-entry-link entry))
          (author (or (elfeed-meta entry :author) ""))
-         (org-file (expand-file-name "notes.org" projects-dir)) ;; change this to your file
+         (org-file (expand-file-name "notes.org" elamdf/org-projects-dir)) ;; change this to your file
          (headline "Articles"))        ;; and this to your headline
     (if (not (and title link))
         (message "Missing title or link in elfeed entry.")
@@ -121,11 +121,17 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 (defun elamdf/show-random-org-quote ()
   "Display a random quote when a new Org file is opened."
   (when (and buffer-file-name
-             (string-equal (file-name-extension buffer-file-name) "org")
+             (is-prefix-p "CAPTURE" buffer-file-name)
              (not (file-exists-p buffer-file-name)))
     (message "%s" (nth (random (length elamdf/org-quotes)) elamdf/org-quotes))))
 
 
+(defun elamdf/show-random-org-quote ()
+  "Display a random quote when a new Org file is opened."
+  (when (and buffer-file-name
+             (string-equal (file-name-extension buffer-file-name) "org")
+             (not (file-exists-p buffer-file-name)))
+    (message "%s" (nth (random (length elamdf/org-quotes)) elamdf/org-quotes))))
 
 (defun elamdf/ensure-ollama-running (&rest args)
   "Start `ollama serve` if it's not already running."
