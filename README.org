@@ -142,28 +142,22 @@
           completion-category-overrides '((file (styles basic partial-completion)))))
 
   ;; --- Sources/commands + preview control ---
-  ;;          ("C-c p s r" . consult-ripgrep)  ; project/file tree search
-  ;; (
   (use-package consult
     :bind (("C-M-s"   . consult-line)     ; search in buffer
            ("M-i"   . consult-imenu))   ; symbols in buffer
     )
-  (with-eval-after-load 'projectile
-    (define-key projectile-command-map [remap projectile-ripgrep] #'consult-ripgrep))
 
-      ;;; --- Keep completion in minibuffer & tame previews ---
+  ;; use better ripgrep
+  (with-eval-after-load 'projectile
+    (advice-add 'projectile-ripgrep :override #'consult-ripgrep))
+
+          ;;; --- ripgrep completion in minibuffer & tame previews ---
   (vertico-mode 1)                            ; or (fido-vertical-mode 1)
   (setq completion-auto-help nil)             ; don't pop *Completions*
   (setq consult-preview-key nil)              ; no auto preview panes
   (global-set-key (kbd "C-g") #'keyboard-escape-quit)
 
-      ;;; --- Better matching (optional, popular) ---
-  ;; (use-package orderless
-  ;;   :init (setq completion-styles '(orderless basic)
-  ;;              completion-category-defaults nil
-  ;;              completion-category-overrides '((file (styles basic partial-completion)))))
-
-      ;;; --- Consult takes over buffer switching ---
+          ;;; --- Consult takes over buffer switching ---
   (global-set-key (kbd "C-x b")   #'consult-buffer)
   (global-set-key (kbd "C-x 4 b") #'consult-buffer-other-window)
   (global-set-key (kbd "C-x 5 b") #'consult-buffer-other-frame)
@@ -176,7 +170,7 @@
   (global-set-key (kbd "C-x C-r") #'consult-recent-file)   ; open recent files
   (global-set-key (kbd "M-g g")   #'consult-goto-line)     ; nicer goto-line
 
-      ;;; --- Case-insensitive completion for files/buffers (nice QoL) ---
+          ;;; --- Case-insensitive completion for files/buffers (nice QoL) ---
   (setq read-buffer-completion-ignore-case t
         read-file-name-completion-ignore-case t
         completion-ignore-case t)
