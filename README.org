@@ -14,11 +14,11 @@
       (tooltip-mode   -1)                   ; hide tooltips
       (set-fringe-mode 10)                  ; extra margin
       (menu-bar-mode   -1)                  ; hide menu bar
-      (defvar my/fixed-width-font  "Fira Code Retina"
+      (defvar elamdf/fixed-width-font  "Fira Code Retina"
         "The font to use for monospaced (fixed width) text.")
-      (defvar my/variable-width-font "Iosevka Aile"
+      (defvar elamdf/variable-width-font "Iosevka Aile"
         "The font to use for variable-pitch (document) text.")
-      (set-face-attribute 'default nil :font my/fixed-width-font :height 140)
+      (set-face-attribute 'default nil :font elamdf/fixed-width-font :height 140)
   ;;)
 
 #+END_SRC
@@ -144,54 +144,33 @@
   ;; --- Sources/commands + preview control ---
   (use-package consult
     :bind (("C-M-s"   . consult-line)     ; search in buffer
-           ("C-c p s r" . consult-ripgrep)  ; project/file tree search
            ("M-i"   . consult-imenu))   ; symbols in buffer
-    :init
-    ;; Keep everything in the minibuffer until *you* ask to preview:
-    ;;   - nil = no automatic preview
-    ;;   - "M-." = press M-. to preview current candidate
-    (setq consult-preview-key "M-."))
-  ;; If you want zero preview ever, use:
-  ;; (setq consult-preview-key nil)
+    )
 
-    ;;; --- Keep completion in minibuffer & tame previews ---
+  ;; use better ripgrep
+  (with-eval-after-load 'projectile
+    (advice-add 'projectile-ripgrep :override #'consult-ripgrep))
+
+          ;;; --- ripgrep completion in minibuffer & tame previews ---
   (vertico-mode 1)                            ; or (fido-vertical-mode 1)
   (setq completion-auto-help nil)             ; don't pop *Completions*
   (setq consult-preview-key nil)              ; no auto preview panes
   (global-set-key (kbd "C-g") #'keyboard-escape-quit)
 
-    ;;; --- Better matching (optional, popular) ---
-  ;; (use-package orderless
-  ;;   :init (setq completion-styles '(orderless basic)
-  ;;              completion-category-defaults nil
-  ;;              completion-category-overrides '((file (styles basic partial-completion)))))
-
-    ;;; --- Consult takes over buffer switching ---
+          ;;; --- Consult takes over buffer switching ---
   (global-set-key (kbd "C-x b")   #'consult-buffer)
   (global-set-key (kbd "C-x 4 b") #'consult-buffer-other-window)
   (global-set-key (kbd "C-x 5 b") #'consult-buffer-other-frame)
 
   ;; Bonus: project-aware buffer list on a separate key
   (global-set-key (kbd "C-x B")   #'consult-project-buffer)
-
-    ;;; --- Files: pick ONE of these approaches ---
-
-  ;; Option A: Keep classic find-file (already minibuffer via Vertico)
-  ;; (global-set-key (kbd "C-x C-f") #'find-file)
-
-  ;; Option B: Replace with a fast file finder (fd recommended)
-  ;; Requires 'fd' in PATH. Falls back to 'find' with consult-find.
-  (when (executable-find "fd")
-    (global-set-key (kbd "C-x C-f") #'consult-fd))
-  ;; If you prefer POSIX find:
-  ;; (global-set-key (kbd "C-x C-f") #'consult-find)
+  (global-set-key (kbd "C-x C-f") #'consult-find)
 
   ;; Handy extras
   (global-set-key (kbd "C-x C-r") #'consult-recent-file)   ; open recent files
   (global-set-key (kbd "M-g g")   #'consult-goto-line)     ; nicer goto-line
-  (global-set-key (kbd "C-c s")   #'consult-ripgrep)       ; search project
 
-    ;;; --- Case-insensitive completion for files/buffers (nice QoL) ---
+          ;;; --- Case-insensitive completion for files/buffers (nice QoL) ---
   (setq read-buffer-completion-ignore-case t
         read-file-name-completion-ignore-case t
         completion-ignore-case t)
@@ -230,7 +209,7 @@
   (use-package pr-review :after magit)
   (setq auth-sources '("\~/.authinfo"))
   ;; use consult instead of projectile ripgrep
-    (global-set-key (kbd "C-c p s r") 'consult-ripgrep)
+    ;; (global-set-key (kbd "C-c p s r") 'consult-ripgrep)
 
 #+END_SRC
 

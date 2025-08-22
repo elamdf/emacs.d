@@ -5,17 +5,17 @@
 (defvar-local typewriter--chars-per-line 70)
 (defvar-local typewriter--lines-per-page 10)
 
-(defvar paper-dims-mm
+(defvar typewriter-paper-dims-mm
   '(("a2_env" . (146.05 . 111.125))
     ("a4" . (215.9 . 296.926)))
   "Mapping of paper width, height names to mm width and height.")
 
 
-(defvar font-dims-mm
+(defvar typewriter-font-dims-mm
   '(("Hermes 3000" . (2.56 . 4.27))) ; seems reasonable
   "The character (width, line height) of a monospace typewriter font in mm")
 
-(defun line-separator-insert-overlays (n)
+(defun typewriter--line-separator-insert-overlays (n)
   (save-excursion
     (goto-char (point-min))
     (let ((line-number 1))
@@ -36,8 +36,8 @@
             (setq line-number (1+ line-number)))
         ))))
 
-(defun line-separator--refresh (&rest _)
-  (line-separator-insert-overlays typewriter--lines-per-page))
+(defun typewriter--line-separator-refresh (&rest _)
+  (typewriter--line-separator-insert-overlays typewriter--lines-per-page))
 
 (defun typewriter--parse-params ()
   "Parse Org-style #+FONT and #+PAPER_SIZE headers in buffer."
@@ -57,19 +57,19 @@
   "Apply compute and apply pagebreak overlays and enforce page width via auto-fill-mode."
   ;; (when typewriter--font
   ;;   (face-remap-add-relative 'default :family typewriter--font))
-  (let ((line-size-mm (cdr (assoc (symbol-name typewriter--paper-size) paper-dims-mm))))
-    (let ((char-size-mm (cdr (assoc (symbol-name typewriter--font) font-dims-mm))))
+  (let ((line-size-mm (cdr (assoc (symbol-name typewriter--paper-size) typewriter-paper-dims-mm))))
+    (let ((char-size-mm (cdr (assoc (symbol-name typewriter--font) typewriter-font-dims-mm))))
       (when (and line-size-mm char-size-mm)
         (setq typewriter--chars-per-line (floor (/ (car line-size-mm) (car char-size-mm))))
         (setq typewriter--lines-per-page (floor (/ (cdr line-size-mm) (cdr char-size-mm))))
         )))
   (set-fill-column typewriter--chars-per-line)
-  (line-separator--refresh)
+  (typewriter--line-separator-refresh)
   (auto-fill-mode t)
   )
 
 (add-hook 'after-change-functions #'(lambda (&rest _)
-                                      (if (eq major-mode 'typewriter-mode) (line-separator--refresh))))
+                                      (if (eq major-mode 'typewriter-mode) (typewriter--line-separator-refresh))))
 
 
 ;;;###autoload

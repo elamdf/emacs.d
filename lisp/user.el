@@ -50,16 +50,16 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
          ((> rank-a rank-b) 1)
          (t 0))))))
 ;; org meeting stuff
-(defvar meeting-notes-dir
+(defvar elamdf/meeting-notes-dir
   (expand-file-name "~/Documents/meeting_notes")
   "Directory where new meeting notes files are created.")
 
 (defun elamdf/create-meeting-notes-file ()
-  "Create a new Org file in `meeting-notes-dir`, insert and expand the `meet` snippet."
+  "Create a new Org file in `elamdf/meeting-notes-dir`, insert and expand the `meet` snippet."
   (interactive)
-  (let* ((default-directory meeting-notes-dir)
-         (_ (unless (file-exists-p meeting-notes-dir)
-              (make-directory meeting-notes-dir t)))
+  (let* ((default-directory elamdf/meeting-notes-dir)
+         (_ (unless (file-exists-p elamdf/meeting-notes-dir)
+              (make-directory elamdf/meeting-notes-dir t)))
          (filename (make-temp-file "meeting-" nil ".org"))
          (buf (find-file filename)))
     (with-current-buffer buf
@@ -79,7 +79,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                    (safe-title (replace-regexp-in-string "[^a-zA-Z0-9]+" "_" (downcase title)))
                    (date (format-time-string "%Y-%m-%d"))
                    (new-name (file-name-nondirectory (format "%s_%s.org" safe-title date)))
-                   (new-path (expand-file-name new-name meetings-dir)))
+                   (new-path (expand-file-name new-name elamdf/meeting-notes-dir)))
               (unless (string= new-path buffer-file-name)
                 (when (or (not (file-exists-p new-path))
                           (yes-or-no-p (format "Rename file to %s?" new-name)))
@@ -116,15 +116,6 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 
 (defvar elamdf/org-quotes
   '("\“All you have to do is write one true sentence. Write the truest sentence that you know.\” Ernest Hemingway"))
-
-
-(defun elamdf/show-random-org-quote ()
-  "Display a random quote when a new Org file is opened."
-  (when (and buffer-file-name
-             (is-prefix-p "CAPTURE" buffer-file-name)
-             (not (file-exists-p buffer-file-name)))
-    (message "%s" (nth (random (length elamdf/org-quotes)) elamdf/org-quotes))))
-
 
 (defun elamdf/show-random-org-quote ()
   "Display a random quote when a new Org file is opened."
@@ -182,38 +173,38 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
       "[No Zotero item found] \nqq%?")))
 
 
-(defun hs-cycle (&optional level)
+(defun elamdf/hs-cycle (&optional level)
   (interactive "p")
   (let (message-log-max
         (inhibit-message t))
     (if (= level 1)
         (pcase last-command
-          ('hs-cycle
+          ('elamdf/hs-cycle
            (hs-hide-level 1)
-           (setq this-command 'hs-cycle-children))
-          ('hs-cycle-children
+           (setq this-command 'elamdf/hs-cycle-children))
+          ('elamdf/hs-cycle-children
            ;; TODO: Fix this case. `hs-show-block' needs to be
            ;; called twice to open all folds of the parent
            ;; block.
            (save-excursion (hs-show-block))
            (hs-show-block)
-           (setq this-command 'hs-cycle-subtree))
-          ('hs-cycle-subtree
+           (setq this-command 'elamdf/hs-cycle-subtree))
+          ('elamdf/hs-cycle-subtree
            (hs-hide-block))
           (_
            (if (not (hs-already-hidden-p))
                (hs-hide-block)
              (hs-hide-level 1)
-             (setq this-command 'hs-cycle-children))))
+             (setq this-command 'elamdf/hs-cycle-children))))
       (hs-hide-level level)
       (setq this-command 'hs-hide-level))))
 
-(defun hs-global-cycle ()
+(defun elamdf/hs-global-cycle ()
     (interactive)
     (pcase last-command
-      ('hs-global-cycle
+      ('elamdf/hs-global-cycle
        (save-excursion (hs-show-all))
-       (setq this-command 'hs-global-show))
+       (setq this-command 'elamdf/hs-global-show))
       (_ (hs-hide-all))))
 
 (defun elamdf/org-word-count ()
