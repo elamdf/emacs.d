@@ -2,7 +2,7 @@
 (defvar elamdf/projects-dir
   (expand-file-name "~/Documents/projects/")
   "Root directory for my project-related Org files.")
-(defvar meetings-dir
+(defvar elamdf/meeting-notes-dir
   (expand-file-name "~/Documents/projects/meetings")
   "Root directory for my meeting notes.")
 ;; slack
@@ -52,7 +52,7 @@
      :subscribed-channels nil ;; using slack-extra-subscribed-channels because I can change it dynamically
      )
    (slack-start)
-      (expand-file-name "Slack.org" projects-dir))
+      (expand-file-name "Slack.org" elamdf/projects-dir))
 
   )
 
@@ -61,7 +61,7 @@
   :after slack
   :init
   (alert-define-style
-   'my/slack-alert-style :title
+   'elamdf/slack-alert-style :title
    "Make Org headings for messages I receive - Style"
 
    :notifier
@@ -80,11 +80,11 @@
        (format "\n <%s>" (format-time-string "%Y-%m-%d %H:%M"))
        "\n")
       nil
-      (expand-file-name "Slack.org" projects-dir)
+      (expand-file-name "Slack.org" elamdf/projects-dir)
       t)))
   (setq alert-default-style 'message)
   (add-to-list 'alert-user-configuration
-               '(((:category . "slack")) my/slack-alert-style nil)))
+               '(((:category . "slack")) elamdf/slack-alert-style nil)))
 
 ;; email
 

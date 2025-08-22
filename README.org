@@ -14,11 +14,11 @@
       (tooltip-mode   -1)                   ; hide tooltips
       (set-fringe-mode 10)                  ; extra margin
       (menu-bar-mode   -1)                  ; hide menu bar
-      (defvar my/fixed-width-font  "Fira Code Retina"
+      (defvar elamdf/fixed-width-font  "Fira Code Retina"
         "The font to use for monospaced (fixed width) text.")
-      (defvar my/variable-width-font "Iosevka Aile"
+      (defvar elamdf/variable-width-font "Iosevka Aile"
         "The font to use for variable-pitch (document) text.")
-      (set-face-attribute 'default nil :font my/fixed-width-font :height 140)
+      (set-face-attribute 'default nil :font elamdf/fixed-width-font :height 140)
   ;;)
 
 #+END_SRC
