@@ -64,7 +64,6 @@
          (load bootstrap-file nil 'nomessage))
   (require 'package)
   (setq package-archives '(("melpa" . "https://melpa.org/packages/")
-                           ("org"   . "https://orgmode.org/elpa/")
                            ("elpa"  . "https://elpa.gnu.org/packages/")))
   (package-initialize)
   (unless package-archive-contents (package-refresh-contents))
@@ -92,7 +91,9 @@
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
   (use-package company)
-  (use-package doom-themes :init (load-theme 'doom-palenight t))
+  (use-package doom-themes)
+
+ (load-theme 'doom-tokyo-night t)
   (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
   (setq mac-command-modifier 'meta)
   (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
@@ -125,6 +126,8 @@
     (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
 
 #+END_SRC
+
+#+RESULTS:
 
 
 * Completion
@@ -164,7 +167,7 @@
 
   ;; Bonus: project-aware buffer list on a separate key
   (global-set-key (kbd "C-x B")   #'consult-project-buffer)
-  (global-set-key (kbd "C-x C-f") #'consult-find)
+  ;; (global-set-key (kbd "C-x C-f") #'consult-find)
 
   ;; Handy extras
   (global-set-key (kbd "C-x C-r") #'consult-recent-file)   ; open recent files
@@ -177,8 +180,6 @@
 
   (with-eval-after-load 'vertico
     (require 'vertico-directory)
-    ;; Make Backspace delete the whole folder component, not one char
-    (define-key vertico-map (kbd "DEL") #'vertico-directory-delete-word)
     ;; Optional: extra directory niceties
     (define-key vertico-map (kbd "C-l")  #'vertico-directory-up)        ; go up directory
     (define-key vertico-map (kbd "RET")  #'vertico-directory-enter))    ; enter directory
@@ -572,12 +573,10 @@
           (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
                                "https://semianalysis.com/feed/"
                                "https://taylor.town/feed.xml"
-                               "http://yummymelon.com/devnull/feeds/tags/emacs.atom.xml"
-                               "https://www.chinatalk.media/feed"
                                "https://geohot.github.io/blog/feed"
-                               "https://www.sinification.com/feed"
+                               "https://vighneshiyer.com/rss.xml"
                                "https://elam.day/post/atom.xml"
-                               "https://irreal.org/blog/?feed=rss2"))
+                               "https://colah.github.io/rss"))
 
     (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
 
