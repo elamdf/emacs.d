@@ -383,10 +383,10 @@
         '(("r" "Read" entry
            (file+headline (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Reading List")
            "* READ %^{Title} by %^{Author} %^g: %?
-  :PROPERTIES:
-  :ENTERED: %U
-  :END
-  ")
+    :PROPERTIES:
+    :ENTERED: %U
+    :END
+    ")
 
 
           ("w" "Watch" entry
@@ -394,50 +394,51 @@
            ;; (file+headline (expand-file-name "capture.org" elamdf/projects-dir) "Watch List")
 
            "* WATCH %^{Title} %^g: %?
-  :PROPERTIES:
-  :ENTERED: %U
-  :URL: %^{URL}
-  :END")
+    :PROPERTIES:
+    :ENTERED: %U
+    :URL: %^{URL}
+    :END:
+  ")
 
           ("t" "TODO" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "TODOs")
            "* TODO %?
-  :PROPERTIES:
-  :ENTERED: %U
-  :END
-  " :empty-lines-after 1)
+    :PROPERTIES:
+    :ENTERED: %U
+    :END:
+    " :empty-lines-after 1)
 
           ("l" "Log" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Log")
            "* %?
-  :PROPERTIES:
-  :ENTERED: %U
-  :END
-  " :empty-lines-after 1)
+    :PROPERTIES:
+    :ENTERED: %U
+    :END:
+    " :empty-lines-after 1)
           ("i" "Idea" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Ideas")
            "* IDEA %?
-  :PROPERTIES:
-  :ENTERED: %U
-  :END
-  " :empty-lines-after 1)
+    :PROPERTIES:
+    :ENTERED: %U
+    :END:
+    " :empty-lines-after 1)
           ("s" "Quote" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Quotes")
            "* \"%i%?\"
-  :PROPERTIES:
-  :ENTERED: %U
-  :END
-  " :empty-lines-after 1)
+    :PROPERTIES:
+    :ENTERED: %U
+    :END:
+    " :empty-lines-after 1)
           ("R" "Read from Zotero" entry (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Reading List")
            "* READ %(elamdf/zotero-latest-capture-string)
-  :ENTERED: %U
-  :END:
-  %?" :empty-lines-after 1)
+    :ENTERED: %U
+    :END:
+    %?" :empty-lines-after 1)
           ("e" "Elfeed article" entry
            (file+olp  (lambda () (expand-file-name "notes.org" elamdf/projects-dir)) "Reading List")
            "* [[%:link][%:description]]
-    :PROPERTIES:
-    :LINK: %:link
-    :AUTHOR: %:authors
-    :ENTERED: %U
-    :END:
-  %?" :empty-lines-after 1)))
+      :PROPERTIES:
+      :LINK: %:link
+      :AUTHOR: %:authors
+      :ENTERED: %U
+      :END:
+    %?" :empty-lines-after 1)))
   (defun elamdf/org-capture-elfeed ()
     (interactive)
     (org-capture nil "e"))
