@@ -470,7 +470,10 @@
    '((python . t)))
 
   (use-package ox-reveal) ; reveal js presentations!n
-  (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
+  ;; no longer necessary?
+  ;; (use-package ox-md) ; reveal js presentations!n
+  ;; (
+   (setq org-reveal-root "https://cdn.jsdelivr.net/npm/reveal.js")
   (setq org-hide-emphasis-markers t)
 
   (use-package org-present)
@@ -600,10 +603,13 @@
   (use-package olivetti) ; nice formatting for text
           (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
                                "https://semianalysis.com/feed/"
+                               "https://branchfree.org/feed/"
                                "https://taylor.town/feed.xml"
                                "https://geohot.github.io/blog/feed"
                                "https://vighneshiyer.com/rss.xml"
                                "https://elam.day/post/atom.xml"
+                               "https://roonscape.ai/feed"
+                               "https://www.julian.ac/feeds/all.rss.xml"
                                "https://colah.github.io/rss"))
 
     (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
@@ -640,4 +646,4 @@ to get cleaner fonts
 
 * External dependencies I remember adding
 =rust-analyzer=
-** TODO update this by doing an install from a fresh mac/windows machine
+typst
