@@ -168,8 +168,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                          (replace-regexp-in-string "/" "_"))))
            (format "%s :%s:
 :PROPERTIES:
-:AUTHORS: %s
-:END:" title   (or (and (not (string-blank-p tag)) (format ":%s:" tag)) "") (or (and (not (string-blank-p authors)) authors) "") ))
+:AUTHORS: %s" title   (or (and (not (string-blank-p tag)) (format ":%s:" tag)) "") (or (and (not (string-blank-p authors)) authors) "") ))
       "[No Zotero item found] \nqq%?")))
 
 
