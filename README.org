@@ -86,14 +86,15 @@
   ;; Disable line numbers where they get in the way
   (dolist (hook '(org-mode-hook term-mode-hook shell-mode-hook eshell-mode-hook))
     (add-hook hook (lambda () (display-line-numbers-mode 0))))
-
+    (global-set-key (kbd "M-o")   #'other-window)
 #+END_SRC
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
   (use-package company)
   (use-package doom-themes)
 
- (load-theme 'doom-tokyo-night t)
+  (add-to-list 'custom-theme-load-path (concat user-emacs-directory "/lisp"))
+  ;;  (load-theme 'alabaster t)
   (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
   (setq mac-command-modifier 'meta)
   (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
@@ -102,6 +103,13 @@
     :mode ("README\\.md\\'" . gfm-mode)
     :init (setq markdown-command "multimarkdown")
     :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
+  ;; things to make interacting with obsidian vaults nice
+  (setq markdown-enable-highlighting-syntax t)
+  (setq markdown-enable-wiki-links  t)
+  (define-key markdown-mode-map (kbd "C-c C-a w") #'elamdf/insert-relative-wiki-link)
+    (define-key markdown-mode-map (kbd "C-c C-o") #'elamdf/markdown-follow-thing-at-point)
+    (setq markdown-link-space-sub-char " ") ;; obsidian doesn't do space substitution
+
   (defun elamdf/markdown-no-comment-start ()
     (setq-local comment-start nil))
   (add-hook 'markdown-mode-hook #'elamdf/markdown-no-comment-start)
@@ -128,7 +136,6 @@
 #+END_SRC
 
 #+RESULTS:
-
 
 * Completion
 #+begin_src emacs-lisp
@@ -158,7 +165,7 @@
   (vertico-mode 1)                            ; or (fido-vertical-mode 1)
   (setq completion-auto-help nil)             ; don't pop *Completions*
   (setq consult-preview-key nil)              ; no auto preview panes
-  (global-set-key (kbd "C-g") #'keyboard-escape-quit)
+  ;; (global-set-key (kbd "C-g") #'keyboard-escape-quit)
 
           ;;; --- Consult takes over buffer switching ---
   (global-set-key (kbd "C-x b")   #'consult-buffer)
@@ -211,8 +218,16 @@
   (setq auth-sources '("\~/.authinfo"))
   ;; use consult instead of projectile ripgrep
     ;; (global-set-key (kbd "C-c p s r") 'consult-ripgrep)
+  (use-package projectile-ripgrep)
+
+(add-hook 'projectile-after-switch-project-hook
+          #'projectile-find-file)
+  (use-package ripgrep)
+  (use-package rg)
 
 #+END_SRC
+
+#+RESULTS:
 
 
 
@@ -220,8 +235,9 @@
 #+BEGIN_SRC emacs-lisp
       (use-package eglot
         :ensure t
-        :hook ((( scala-mode python-mode rust-mode)
+        :hook ((( scala-mode python-mode rust-mode tuareg-mode caml-mode c-mode-hook c++-mode-hook c-or-c++-mode-hook )
                 . eglot-ensure)
+
                ((cider-mode eglot-managed-mode) . eglot-disable-in-cider))
         :preface
         (defun eglot-disable-in-cider ()
@@ -239,6 +255,7 @@
 
       ;; checks
       (use-package flycheck)
+
       (global-flycheck-mode)
       ;; flyover for prettier inline syntax checks
       (require 'flyover)
@@ -247,25 +264,67 @@
 
 
       ;; Use theme colors for error/warning/info faces
-      (setq flyover-use-theme-colors t)
+      (setq flyover-use-theme-colors 0)
 
       ;; Adjust background lightness (lower values = darker)
-      (setq flyover-background-lightness 45)
+      (setq flyover-background-lightness 70)
 
       ;; Make icon background darker than foreground
       (setq flyover-percent-darker 40)
 
-      (setq flyover-text-tint 'lighter) ;; or 'darker or nil
+      (setq flyover-text-tint nil) ;; or 'darker or nil
 
       ;; "Percentage to lighten or darken the text when tinting is enabled."
-      (setq flyover-text-tint-percent 50)
+      (setq flyover-text-tint-percent 100)
       (setq flyover-levels '(error))    ; Show only errors and warnings
 
-    (use-package calyx-mode
-      :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
-    (use-package platformio-mode)
+      (use-package calyx-mode
+        :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+      (use-package platformio-mode)
+
+
+      (use-package typst-ts-mode
+        :straight '(:type git :host codeberg :repo "meow_king/typst-ts-mode")
+        :custom
+        (typst-ts-watch-options '("--open"))
+        (typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory))
+        (typst-ts-mode-enable-raw-blocks-highlight t)
+        :config
+        (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
+
+      (add-to-list 'auto-mode-alist '("\\.typ\\'" . typst-ts-mode))
+      (with-eval-after-load 'eglot
+        (with-eval-after-load 'typst-ts-mode
+          (add-to-list 'eglot-server-programs
+                       `((typst-ts-mode) .
+                         ,(eglot-alternatives `(,typst-ts-lsp-download-path
+                                                "tinymist"
+                                                "typst-lsp"))))))
+
+
+    (use-package opam-switch-mode
+      :ensure t
+      :hook
+      ((coq-mode tuareg-mode) . opam-switch-mode))
+      (use-package proof-general)
+      (setq proof-three-window-mode-policy 'vertical)
+      (setq proof-shrink-windows-tofit t)
+      (use-package just-mode)
+  (require `bsv-mode-23)
+  ;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
+  (require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
+  ;; ## end of OPAM user-setup addition for emacs / base ## keep this line
+  ;; compile mode setup
+  (setq compilation-scroll-output t)
 
 #+END_SRC
+
+#+RESULTS:
+: opam-user-setup
+
+
+
+
 
 
 * python lsp stuff
@@ -296,79 +355,190 @@
 
 * Systemverilog lsp stuff
 #+begin_src emacs-lisp
-    (use-package verilog-ext
-      :hook ((verilog-mode . verilog-ext-mode))
-      :init
-      ;; Can also be set through `M-x RET customize-group RET verilog-ext':
-      ;; Comment out/remove the ones you do not need
-      (setq verilog-ext-feature-list
-            '(font-lock
-              xref
-              capf
-              hierarchy
-              eglot
-              flycheck
-              beautify
-              navigation
-              template
-              formatter
-              compilation
-              imenu
-              which-func
-              hideshow
-              typedefs
-              time-stamp
-              block-end-comments
-              ports))
-      :config
-      (verilog-ext-mode-setup))
+
+
+      (use-package verilog-ext
+        :hook ((verilog-mode . verilog-ext-mode))
+        :init
+        ;; Can also be set through `M-x RET customize-group RET verilog-ext':
+        ;; Comment out/remove the ones you do not need
+        (setq verilog-ext-feature-list
+              '(font-lock
+                xref
+                capf
+                hierarchy
+                eglot
+                flycheck
+                beautify
+                navigation
+                template
+                formatter
+                compilation
+                imenu
+                which-func
+                hideshow
+                typedefs
+                time-stamp
+                block-end-comments
+                ports))
+        :config
+        (verilog-ext-mode-setup))
+  ;; (add-to-list 'eglot-server-programs
+  ;;              '((verilog-mode verilog-ts-mode verilog-ext-mode) . ("svlangserver")))
+
+    (add-hook 'verilog-mode-hook #'verilog-ext-mode)
+
 #+end_src
+
+#+RESULTS:
+| verilog-ext-eglot-svlangserver-configuration | verilog-ext-typedef-proj-hook | hs-minor-mode | verilog-ext-mode |
+
+* ocaml lsp stuff
+#+begin_src emacs-lisp
+  ;; Major mode for OCaml programming
+(use-package tuareg
+  :ensure t
+  :mode (("\\.ocamlinit\\'" . tuareg-mode)))
+
+;; Major mode for editing Dune project files
+(use-package dune
+  :ensure t)
+
+;; Merlin provides advanced IDE features
+(use-package merlin
+  :ensure t
+  :config
+  (add-hook 'tuareg-mode-hook #'merlin-mode)
+  (add-hook 'merlin-mode-hook #'company-mode)
+  ;; we're using flycheck instead
+  (setq merlin-error-after-save nil))
+
+(use-package merlin-eldoc
+  :ensure t
+  :hook ((tuareg-mode) . merlin-eldoc-setup))
+
+;; This uses Merlin internally
+(use-package flycheck-ocaml
+  :ensure t
+  :config
+  (flycheck-ocaml-setup))
+#+end_src
+
+#+RESULTS:
+: t
+
+
+
+* Prose
+#+begin_src emacs-lisp
+
+  (defun balance-parens () (when buffer-file-name
+                           (add-hook 'after-save-hook
+                                     'check-parens
+                                     nil t)))
+
+  ;Add good shortcut for flyspell. The hook makes sure when flyspell-mode is on,
+  ;the buffer gets scanned.
+  (defun flyspell nil "Do the expected default, which is run flyspell on the whole buffer."
+    (interactive)
+    (flyspell-buffer))
+  (add-hook 'flyspell-mode-hook 'flyspell-buffer)
+
+  ; After we add a word to Ispell or correct something, flyspell's highlighting may become
+  ; outdated. Let's re-run highlighting after a correction.
+  (defadvice ispell (after advice)
+    (flyspell-buffer))
+  (ad-activate 'ispell t)
+  (defadvice ispell-word (after advice)
+    (flyspell-buffer))
+  (ad-activate 'ispell-word t)
+    (add-hook 'markdown-mode-hook   'balance-parens)
+
+
+#+end_src
+
+#+RESULTS:
+| balance-parens | inline-cr-mode | elamdf/markdown-no-comment-start |
+
+
+* Codex
+#+begin_src emacs-lisp
+  (use-package codex-cli
+  ;; For MELPA: :ensure t
+  ;; For GitHub (Emacs 29+):
+  ;; :vc (:fetcher github :repo "bennfocus/codex-cli.el")
+  :bind (("C-x a t" . codex-cli-toggle)
+         ("C-x a s" . codex-cli-start)
+         ("C-x a q" . codex-cli-stop)
+         ("C-x a Q" . codex-cli-stop-all)
+         ("C-x a p" . codex-cli-send-prompt)
+         ("C-x a r" . codex-cli-send-region)
+         ("C-x a f" . codex-cli-send-file)
+         ;; Show-all layout + paging
+         ("C-x a a" . codex-cli-toggle-all)
+         ;; ("C-x a n" . codex-cli-toggle-all-next-page)
+         ;; ("C-x b" . codex-cli-toggle-all-prev-page)
+         )
+  :init
+  (setq codex-cli-executable "codex"
+        codex-cli-terminal-backend 'vterm
+        codex-cli-side 'right
+        codex-cli-width 90))
+
+#+end_src
+
+#+RESULTS:
+: codex-cli-toggle-all
 
 
 * Org Mode Configuration
 
 #+BEGIN_SRC emacs-lisp
-  (setq org-ellipsis " ▾"
-        org-startup-folded 'content
-        org-cycle-separator-lines 2
-        org-fontify-quote-and-verse-blocks t)
-  (add-hook 'org-mode-hook #'org-indent-mode)
-  (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
-  (setq org-directory elamdf/projects-dir)
-  (setq org-default-notes-file (concat org-directory "/notes.org"))
-  (use-package org-tempo :ensure nil :demand t)
-  (dolist (tpl '(("sh" . "src sh")
-                 ("el" . "src emacs-lisp")
-                 ("li" . "src lisp")
-                 ("sc" . "src scheme")
-                 ("ts" . "src typescript")
-                 ("py" . "src python")
-                 ("yaml" . "src yaml")
-                 ("json" . "src json")))
-    (add-to-list 'org-structure-template-alist tpl))
-  (setq org-deadline-warning-days 1
-        org-use-fast-tag-selection t)
-  (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
-  ;; Capture & Refile templates
+    (setq org-ellipsis " ▾"
+          org-startup-folded 'content
+          org-cycle-separator-lines 2
+          org-fontify-quote-and-verse-blocks t)
+    (add-hook 'org-mode-hook #'org-indent-mode)
+
+  ;; this seems to be required to make things normal sized lol
+   (setq org-format-latex-options (plist-put org-format-latex-options :scale 3))
+
+    (org-babel-do-load-languages 'org-babel-load-languages '((emacs-lisp . t) (shell . t)))
+    (setq org-directory elamdf/projects-dir)
+    (setq org-default-notes-file (concat org-directory "/notes.org"))
+    (use-package org-tempo :ensure nil :demand t)
+    (dolist (tpl '(("sh" . "src sh")
+                   ("el" . "src emacs-lisp")
+                   ("li" . "src lisp")
+                   ("sc" . "src scheme")
+                   ("ts" . "src typescript")
+                   ("py" . "src python")
+                   ("yaml" . "src yaml")
+                   ("json" . "src json")))
+      (add-to-list 'org-structure-template-alist tpl))
+    (setq org-deadline-warning-days 1
+          org-use-fast-tag-selection t)
+    (setq org-tag-alist '(("arch" . ?a) ("courses" . ?c) ("ic" . ?i) ("misc" . ?m) ("references" . ?r)))
+    ;; Capture & Refile templates
 
 
-  (use-package fold-and-focus
-    :demand t
-    :straight (fold-and-focus :type git :host nil :repo
-                              "https://git.sr.ht/~flandrew/fold-and-focus")
-    :config
-    (global-fold-and-focus-org-mode)
-    (global-fold-and-focus-md-mode)
-    (global-fold-and-focus-el-mode))
+    (use-package fold-and-focus
+      :demand t
+      :straight (fold-and-focus :type git :host nil :repo
+                                "https://git.sr.ht/~flandrew/fold-and-focus")
+      :config
+      (global-fold-and-focus-org-mode)
+      (global-fold-and-focus-md-mode)
+      (global-fold-and-focus-el-mode))
 
-  ;;
-  (global-set-key (kbd "M-+") 'elamdf/org-word-count)
-  (global-set-key (kbd "C-M-s") 'consult-line)
-  (global-set-key (kbd "C-s") 'isearch-forward-regexp)
-  (global-set-key (kbd "C-r") 'isearch-backward-regexp)
+    ;;
+    (global-set-key (kbd "M-+") 'elamdf/org-word-count)
+    (global-set-key (kbd "C-M-s") 'consult-line)
+    (global-set-key (kbd "C-s") 'isearch-forward-regexp)
+    (global-set-key (kbd "C-r") 'isearch-backward-regexp)
 
-  ;; make indentation work properly
-  (setq org-src-tab-acts-natively t)
+    ;; make indentation work properly
+    (setq org-src-tab-acts-natively t)
 
 #+end_src
 
@@ -602,14 +772,17 @@
           (use-package elfeed)
   (use-package olivetti) ; nice formatting for text
           (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
-                               "https://semianalysis.com/feed/"
+                               "https://newsletter.semianalysis.com/feed"
                                "https://branchfree.org/feed/"
                                "https://taylor.town/feed.xml"
                                "https://geohot.github.io/blog/feed"
                                "https://vighneshiyer.com/rss.xml"
+                               "https://mtlcad.mit.edu/rss.xml"
                                "https://elam.day/post/atom.xml"
                                "https://roonscape.ai/feed"
                                "https://www.julian.ac/feeds/all.rss.xml"
+                               "https://mcyoung.xyz/feed"
+                               "https://www.thonking.ai/feed"
                                "https://colah.github.io/rss"))
 
     (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
@@ -623,10 +796,13 @@
 
 * Miscellaneous
 #+BEGIN_SRC emacs-lisp
-  ;; Fun motivational quote when opening files
-  (add-hook 'find-file-hook #'elamdf/show-random-org-quote)
-  ;; Allow 'list-timers' command
-  (put 'list-timers 'disabled nil)
+  ;; stupid thing that kills perf
+  (remove-hook 'find-file-hooks 'vc-find-file-hook)
+
+    ;; Fun motivational quote when opening files
+    (add-hook 'find-file-hook #'elamdf/show-random-org-quote)
+    ;; Allow 'list-timers' command
+    (put 'list-timers 'disabled nil)
 #+END_SRC
 * OS Config things
 on macos, invoke scripts/capture.sh by creating an automator script and binding it (under keyboard -> shortcuts -> services -> general)
@@ -647,3 +823,4 @@ to get cleaner fonts
 * External dependencies I remember adding
 =rust-analyzer=
 typst
+opam install utop merlin ocamlformat

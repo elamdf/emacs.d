@@ -72,21 +72,21 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 
 (defun elamdf/rename-meeting-notes-file-maybe ()
   "If the just-finished YASnippet had key 'meeting', rename the file."
-        (save-excursion
-          (goto-char (point-min))
-          (when (re-search-forward "^#\\+TITLE: \\(.*\\)$" nil t)
-            (let* ((title (match-string 1))
-                   (safe-title (replace-regexp-in-string "[^a-zA-Z0-9]+" "_" (downcase title)))
-                   (date (format-time-string "%Y-%m-%d"))
-                   (new-name (file-name-nondirectory (format "%s_%s.org" safe-title date)))
-                   (new-path (expand-file-name new-name elamdf/meeting-notes-dir)))
-              (unless (string= new-path buffer-file-name)
-                (when (or (not (file-exists-p new-path))
-                          (yes-or-no-p (format "Rename file to %s?" new-name)))
-                  (rename-file buffer-file-name new-path t)
-                  (set-visited-file-name new-path t t)
-                  (set-buffer-modified-p nil)
-                  (message "Renamed and switched to: %s" new-name)))))))
+  (save-excursion
+    (goto-char (point-min))
+    (when (re-search-forward "^#\\+TITLE: \\(.*\\)$" nil t)
+      (let* ((title (match-string 1))
+             (safe-title (replace-regexp-in-string "[^a-zA-Z0-9]+" "_" (downcase title)))
+             (date (format-time-string "%Y-%m-%d"))
+             (new-name (file-name-nondirectory (format "%s_%s.org" safe-title date)))
+             (new-path (expand-file-name new-name elamdf/meeting-notes-dir)))
+        (unless (string= new-path buffer-file-name)
+          (when (or (not (file-exists-p new-path))
+                    (yes-or-no-p (format "Rename file to %s?" new-name)))
+            (rename-file buffer-file-name new-path t)
+            (set-visited-file-name new-path t t)
+            (set-buffer-modified-p nil)
+            (message "Renamed and switched to: %s" new-name)))))))
 
 
 (defun elamdf/insert-org-participant-tags ()
@@ -166,7 +166,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                (tag (->> tag-path
                          (replace-regexp-in-string " " "_")
                          (replace-regexp-in-string "/" "_"))))
-           (format "%s :%s:
+          (format "%s :%s:
 :PROPERTIES:
 :AUTHORS: %s" title   (or (and (not (string-blank-p tag)) (format ":%s:" tag)) "") (or (and (not (string-blank-p authors)) authors) "") ))
       "[No Zotero item found] \nqq%?")))
@@ -199,12 +199,12 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
       (setq this-command 'hs-hide-level))))
 
 (defun elamdf/hs-global-cycle ()
-    (interactive)
-    (pcase last-command
-      ('elamdf/hs-global-cycle
-       (save-excursion (hs-show-all))
-       (setq this-command 'elamdf/hs-global-show))
-      (_ (hs-hide-all))))
+  (interactive)
+  (pcase last-command
+    ('elamdf/hs-global-cycle
+     (save-excursion (hs-show-all))
+     (setq this-command 'elamdf/hs-global-show))
+    (_ (hs-hide-all))))
 
 (defun elamdf/org-word-count ()
   "Count words in region/buffer, estimate pages, and reading time.
@@ -231,5 +231,79 @@ Excludes lines beginning with * or #. Prints result in echo area."
          (reading-time (/ (+ word-count reading-speed -1) reading-speed)))
     (message "%d words, ~%d pages, ~%d min read"
              word-count page-count reading-time)))
+
+(defun elamdf/insert-relative-wiki-link ()
+  "Prompt with completion for a file and insert its path relative
+to the directory of the file backing the current buffer."
+  (interactive)
+  (unless buffer-file-name
+    (user-error "Current buffer is not visiting a file"))
+  (let* ((base (file-name-directory buffer-file-name))
+         (file (read-file-name "Insert relative path: " base nil t)))
+    (insert (concat "[[" (string-remove-suffix ".md" (file-relative-name file base)) "]]" ))))
+
+
+;; allow us to follow wiki links with headers
+;; the only thing we've actually changed is markdown-follow-wiki-link but I don't know how to replace the markdown-mode internal function pointers so we just replace the refs in our custom version of the call stack for C-c C-o
+(require 'markdown-mode)
+(defun elamdf/markdown-follow-wiki-link (name &optional other)
+  "Follow the wiki link NAME, supporting optional #HEADER fragments.
+Convert NAME to a file name and call `find-file'. Ensure the new buffer
+is in `markdown-mode'. Open in another window when OTHER is non-nil."
+
+  (let* ((wp (file-name-directory buffer-file-name))
+         (i (string-match-p "#" name))
+         (fname  (if i (substring name 0 i) name))
+         (header (and i (substring name (1+ i))))
+         (filename (markdown-convert-wiki-link-to-filename fname)))
+
+    (when other (other-window 1))
+    (let ((default-directory wp))
+      (find-file filename))
+
+    (unless (derived-mode-p 'markdown-mode)
+      (markdown-mode))
+         (warn "AAA")
+    ;; Jump to header if present.
+         (when (and header (not (string-empty-p header)))
+         (warn header)
+      ;; Prefer imenu if available (works well with markdown headings)
+
+         ;; Fallback: search for a markdown heading line whose title matches
+         (goto-char (point-min))
+
+         (when (re-search-forward
+                (format "^#+[ \t]+%s[ \t]*$" (regexp-quote header))
+                nil t)
+           (beginning-of-line)
+           (recenter)))))
+
+(defun elamdf/markdown-follow-wiki-link-at-point (&optional arg)
+  "Find Wiki Link at point.
+With prefix argument ARG, open the file in other window.
+See `markdown-wiki-link-p' and `markdown-follow-wiki-link'."
+  (interactive "P")
+  (if (markdown-wiki-link-p)
+      (elamdf/markdown-follow-wiki-link (markdown-wiki-link-link) arg)
+    (user-error "Point is not at a Wiki Link")))
+
+(defun elamdf/markdown-follow-thing-at-point (arg)
+  "Follow thing at point if possible, such as a reference link or wiki link.
+Opens inline and reference links in a browser.  Opens wiki links
+to other files in the current window, or the another window if
+ARG is non-nil.
+See `markdown-follow-link-at-point' and
+`markdown-follow-wiki-link-at-point'."
+  (interactive "P")
+  (cond ((markdown-link-p)
+         (markdown-follow-link-at-point))
+        ((markdown-wiki-link-p)
+         (elamdf/markdown-follow-wiki-link-at-point arg))
+        (t
+         (let* ((values (markdown-link-at-pos (point)))
+                (url (nth 3 values)))
+           (unless url
+             (user-error "Nothing to follow at point"))
+           (markdown--browse-url url)))))
 
 (provide 'user)
