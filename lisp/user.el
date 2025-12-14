@@ -306,4 +306,89 @@ See `markdown-follow-link-at-point' and
              (user-error "Nothing to follow at point"))
            (markdown--browse-url url)))))
 
+(defun elamdf/display-image-linked-at-point (start end file )
+  "Display the linked image in place of the given link"
+
+          (when (not (zerop (length file)))
+            (unless (file-exists-p file)
+              (let* ((download-file (funcall markdown-translate-filename-function file))
+                     (valid-url (ignore-errors
+                                  (member (downcase (url-type (url-generic-parse-url download-file)))
+                                          markdown-remote-image-protocols))))
+                (if (and markdown-display-remote-images valid-url)
+                    (setq file (markdown--get-remote-image download-file))
+                  (when (not valid-url)
+                    ;; strip query parameter
+                    (setq file (replace-regexp-in-string "?.+\\'" "" file))
+                    (unless (file-exists-p file)
+                      (setq file (url-unhex-string file)))))))
+            (when (file-exists-p file)
+              (let* ((abspath (if (file-name-absolute-p file)
+                                  file
+                                (concat default-directory file)))
+                     (image
+                      (cond ((and markdown-max-image-size
+                                  (image-type-available-p 'imagemagick))
+                             (create-image
+                              abspath 'imagemagick nil
+                              :max-width (car markdown-max-image-size)
+                              :max-height (cdr markdown-max-image-size)))
+                            (markdown-max-image-size
+                             (create-image abspath nil nil
+                                           :max-width (car markdown-max-image-size)
+                                           :max-height (cdr markdown-max-image-size)))
+                            (t (create-image abspath)))))
+                (when image
+                  (let ((ov (make-overlay start end)))
+                    (overlay-put ov 'display image)
+                    (overlay-put ov 'face 'default)
+                    (push ov markdown-inline-image-overlays))))))
+          )
+
+(defconst obsidian-embed-regex
+  "!\\[\\[\\([^]\n|]+\\)\\(?:|\\([^]\n]+\\)\\)?\\]\\]"
+  "Match Obsidian embeds like ![[fname]] or ![[fname|350]].
+Group 1 = fname, Group 2 = alias/size (optional).")
+(defconst resource-folder-name "0 Resources")
+
+(defun image-fname-to-path (name)
+  (concat (projectile-project-root) "/" resource-folder-name "/" name)
+  )
+
+(defun elamdf/markdown-display-inline-images ()
+  "Add inline image overlays to image links in the buffer.
+This can be toggled with `markdown-toggle-inline-images'
+or \\[markdown-toggle-inline-images]."
+  (interactive)
+  (unless (display-images-p)
+    (error "Cannot show images"))
+  (save-excursion
+    (save-restriction
+      (widen)
+      (goto-char (point-min))
+      (while (re-search-forward markdown-regex-link-inline nil t)
+        (let* ((start (match-beginning 0))
+               (imagep (match-beginning 1))
+               (end (match-end 0))
+               (file (image-fname-to-path (match-string-no-properties 6))))
+        (if imagep (elamdf/display-image-linked-at-point start end file))
+        ))
+      (goto-char (point-min))
+      (while (re-search-forward obsidian-embed-regex nil t)
+        (let* ((start (match-beginning 0))
+               (end (match-end 0))
+               (file (image-fname-to-path (match-string-no-properties 1))))
+         (elamdf/display-image-linked-at-point start end file )
+        ))
+      )
+    )
+  )
+
+(defun elamdf/markdown-toggle-inline-images ()
+  "Toggle inline image overlays in the buffer."
+  (interactive)
+  (if markdown-inline-image-overlays
+      (markdown-remove-inline-images)
+     (elamdf/markdown-display-inline-images)))
+
 (provide 'user)
