@@ -1,7 +1,9 @@
-;; various helpers for markdown mode that pull in some of obisidan's features, including
+;; various helpers for markdown mode that pull in some of obisidan's features, including  -*- lexical-binding: t; -*-
 ;; extended wiki link syntax and autocompletion for insertion
 ;; correct rendering of inline image links
+(require 'consult)
 
+;; > CR elamdf for elamdf: merge the next two functions to get (with completion) file name and/or header
 (defun elamdf/insert-relative-wiki-link ()
   "Prompt with completion for a file and insert its path relative
 to the directory of the file backing the current buffer."
@@ -12,18 +14,23 @@ to the directory of the file backing the current buffer."
          (file (read-file-name "Insert relative path: " base nil t)))
     (insert (concat "[[" (string-remove-suffix ".md" (file-relative-name file base)) "]]" ))))
 
+(defun elamdf/insert-relative-wiki-header-link ()
+  "Prompt with completion for a header and insert its path relative to the directory of the file backing the current buffer."
+  (interactive)
+  (let* ((base (file-name-directory buffer-file-name))
+         (header (save-excursion (progn (consult-outline ) (thing-at-point 'line t))) ))
+    (insert (concat "[[" (s-trim header) "]]" ))))
 
 ;; allow us to follow wiki links with headers
 ;; the only thing we've actually changed is markdown-follow-wiki-link but I don't know how to replace the markdown-mode internal function pointers so we just replace the refs in our custom version of the call stack for C-c C-o
 (require 'markdown-mode)
 (defun elamdf/markdown-follow-wiki-link (name &optional other)
   "Follow the wiki link NAME, supporting optional #HEADER fragments.
-Convert NAME to a file name and call `find-file'. Ensure the new buffer
-is in `markdown-mode'. Open in another window when OTHER is non-nil."
-
+Convert NAME to a file name and call `find-file'. Ensure the new buffer is in `markdown-mode'. Open in another window when OTHER is non-nil."
   (let* ((wp (file-name-directory buffer-file-name))
          (i (string-match-p "#" name))
-         (fname  (if i (substring name 0 i) name))
+         ;; fname is "" in the case for links to headers within the current file, e.g. [[# Header]]
+         (fname (if i (gnus-string-or (substring name 0 i) (string-remove-suffix ".md" (buffer-file-name))) name))
          (header (and i (substring name (1+ i))))
          (filename (markdown-convert-wiki-link-to-filename fname)))
 
@@ -33,20 +40,15 @@ is in `markdown-mode'. Open in another window when OTHER is non-nil."
 
     (unless (derived-mode-p 'markdown-mode)
       (markdown-mode))
-         (warn "AAA")
     ;; Jump to header if present.
-         (when (and header (not (string-empty-p header)))
-         (warn header)
-      ;; Prefer imenu if available (works well with markdown headings)
-
-         ;; Fallback: search for a markdown heading line whose title matches
-         (goto-char (point-min))
-
-         (when (re-search-forward
-                (format "^#+[ \t]+%s[ \t]*$" (regexp-quote header))
-                nil t)
-           (beginning-of-line)
-           (recenter)))))
+    (when (and header (not (string-empty-p header)))
+      (goto-char (point-min))
+      (when (re-search-forward
+             ;; seems like obsidian doesn't differentiate between heading number (i.e. number of #s) in creating wiki links, so neither do we.
+             (format "^#* ?%s[ \t]*$" (regexp-quote (s-trim header)))
+             nil t)
+        (beginning-of-line)
+        (recenter)))))
 
 (defun elamdf/markdown-follow-wiki-link-at-point (&optional arg)
   "Find Wiki Link at point.
@@ -79,41 +81,41 @@ See `markdown-follow-link-at-point' and
 (defun elamdf/display-image-linked-at-point (start end file )
   "Display the linked image in place of the given link"
 
-          (when (not (zerop (length file)))
+  (when (not (zerop (length file)))
+    (unless (file-exists-p file)
+      (let* ((download-file (funcall markdown-translate-filename-function file))
+             (valid-url (ignore-errors
+                          (member (downcase (url-type (url-generic-parse-url download-file)))
+                                  markdown-remote-image-protocols))))
+        (if (and markdown-display-remote-images valid-url)
+            (setq file (markdown--get-remote-image download-file))
+          (when (not valid-url)
+            ;; strip query parameter
+            (setq file (replace-regexp-in-string "?.+\\'" "" file))
             (unless (file-exists-p file)
-              (let* ((download-file (funcall markdown-translate-filename-function file))
-                     (valid-url (ignore-errors
-                                  (member (downcase (url-type (url-generic-parse-url download-file)))
-                                          markdown-remote-image-protocols))))
-                (if (and markdown-display-remote-images valid-url)
-                    (setq file (markdown--get-remote-image download-file))
-                  (when (not valid-url)
-                    ;; strip query parameter
-                    (setq file (replace-regexp-in-string "?.+\\'" "" file))
-                    (unless (file-exists-p file)
-                      (setq file (url-unhex-string file)))))))
-            (when (file-exists-p file)
-              (let* ((abspath (if (file-name-absolute-p file)
-                                  file
-                                (concat default-directory file)))
-                     (image
-                      (cond ((and markdown-max-image-size
-                                  (image-type-available-p 'imagemagick))
-                             (create-image
-                              abspath 'imagemagick nil
-                              :max-width (car markdown-max-image-size)
-                              :max-height (cdr markdown-max-image-size)))
-                            (markdown-max-image-size
-                             (create-image abspath nil nil
-                                           :max-width (car markdown-max-image-size)
-                                           :max-height (cdr markdown-max-image-size)))
-                            (t (create-image abspath)))))
-                (when image
-                  (let ((ov (make-overlay start end)))
-                    (overlay-put ov 'display image)
-                    (overlay-put ov 'face 'default)
-                    (push ov markdown-inline-image-overlays))))))
-          )
+              (setq file (url-unhex-string file)))))))
+    (when (file-exists-p file)
+      (let* ((abspath (if (file-name-absolute-p file)
+                          file
+                        (concat default-directory file)))
+             (image
+              (cond ((and markdown-max-image-size
+                          (image-type-available-p 'imagemagick))
+                     (create-image
+                      abspath 'imagemagick nil
+                      :max-width (car markdown-max-image-size)
+                      :max-height (cdr markdown-max-image-size)))
+                    (markdown-max-image-size
+                     (create-image abspath nil nil
+                                   :max-width (car markdown-max-image-size)
+                                   :max-height (cdr markdown-max-image-size)))
+                    (t (create-image abspath)))))
+        (when image
+          (let ((ov (make-overlay start end)))
+            (overlay-put ov 'display image)
+            (overlay-put ov 'face 'default)
+            (push ov markdown-inline-image-overlays))))))
+  )
 
 (defconst obsidian-embed-regex
   "!\\[\\[\\([^]\n|]+\\)\\(?:|\\([^]\n]+\\)\\)?\\]\\]"
@@ -141,15 +143,15 @@ or \\[markdown-toggle-inline-images]."
                (imagep (match-beginning 1))
                (end (match-end 0))
                (file (image-fname-to-path (match-string-no-properties 6))))
-        (if imagep (elamdf/display-image-linked-at-point start end file))
-        ))
+          (if imagep (elamdf/display-image-linked-at-point start end file))
+          ))
       (goto-char (point-min))
       (while (re-search-forward obsidian-embed-regex nil t)
         (let* ((start (match-beginning 0))
                (end (match-end 0))
                (file (image-fname-to-path (match-string-no-properties 1))))
-         (elamdf/display-image-linked-at-point start end file )
-        ))
+          (elamdf/display-image-linked-at-point start end file )
+          ))
       )
     )
   )
@@ -159,6 +161,6 @@ or \\[markdown-toggle-inline-images]."
   (interactive)
   (if markdown-inline-image-overlays
       (markdown-remove-inline-images)
-     (elamdf/markdown-display-inline-images)))
+    (elamdf/markdown-display-inline-images)))
 
 (provide 'obsidian-helpers)
