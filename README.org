@@ -1,4 +1,4 @@
-#+TITLE: Elam's =emacs= Configuration
+#+TITLE: Elam's ==emacs== Configuration
 #+AUTHOR: Elam Day-Friedland
 
 * Startup & UI Basics
@@ -17,6 +17,7 @@
       (defvar elamdf/fixed-width-font  "Fira Code Retina"
         "The font to use for monospaced (fixed width) text.")
       (defvar elamdf/variable-width-font "Iosevka Aile"
+
         "The font to use for variable-pitch (document) text.")
       (set-face-attribute 'default nil :font elamdf/fixed-width-font :height 140)
   ;;)
@@ -104,7 +105,7 @@
     :init (setq markdown-command "multimarkdown")
     :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
 
-  (setq markdown-max-image-size (cons 250 250))
+
 
   (defun elamdf/markdown-no-comment-start ()
     (setq-local comment-start nil))
@@ -129,23 +130,30 @@
     (:keymaps 'make-mode-map "C-o" 'casual-make-tmenu)
     (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
 
+  (use-package cond-let
+    :straight (:type git :host github :repo "tarsius/cond-let"))
 #+END_SRC
 
 #+RESULTS:
 * Obsidian helpers
-Things to make interacting with obsidian vaults nicer.
-
 #+begin_src emacs-lisp
 
   (setq markdown-enable-highlighting-syntax t)
   (setq markdown-enable-wiki-links  t)
+  (setq markdown-max-image-size (cons 1000 1000))
 
   (define-key markdown-mode-map (kbd "C-c C-a w") #'elamdf/insert-relative-wiki-link)
+
+  (define-key markdown-mode-map (kbd "C-c C-a h") #'elamdf/insert-relative-wiki-header-link)
+
   (define-key markdown-mode-map (kbd "C-c C-o") #'elamdf/markdown-follow-thing-at-point)
   (define-key markdown-mode-map (kbd "C-c C-x TAB") #'elamdf/markdown-toggle-inline-images)
   (setq markdown-link-space-sub-char " ") ;; obsidian doesn't do space substitution
 
 #+end_src
+
+#+RESULTS:
+:
 
 * Completion
 #+begin_src emacs-lisp
