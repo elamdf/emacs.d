@@ -684,8 +684,6 @@ Things to make interacting with obsidian vaults nicer.
   (global-set-key (kbd "C-c c") #'org-capture)
 
   (global-set-key (kbd "C-c m") #'elamdf/create-meeting-notes-file)
-  ;; Bismuth
-  (global-set-key (kbd "C-c t") #'inline-cr-list-all-actionables)
 
   ;; elfeed
   (global-set-key (kbd "C-x w w") #'elfeed)
@@ -772,16 +770,24 @@ Things to make interacting with obsidian vaults nicer.
 * Bismuth Configuration
 #+BEGIN_SRC emacs-lisp
   (require 'inline-cr)
+    (require 'bismuth-magit)
   (require 'brain)
   ;; Enable inline‑cr in common prose modes
+  (global-set-key (kbd "M-;") #'inline-cr-maybe-toggle-active)
   (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook))
     (add-hook hook #'inline-cr-mode))
+    (add-hook 'magit-status-headers-hook #'bismuth-magit-insert-actionables t)
 #+END_SRC
+
+#+RESULTS:
+| magit-insert-error-header | magit-insert-diff-filter-header | magit-insert-head-branch-header | magit-insert-upstream-branch-header | magit-insert-push-branch-header | magit-insert-tags-header | bismuth-magit-insert-actionables |
+
 * RSS & Elfeed
 #+BEGIN_SRC emacs-lisp
           (use-package elfeed)
   (use-package olivetti) ; nice formatting for text
           (setq elfeed-feeds '("https://people.csail.mit.edu/rachit/post/atom.xml"
+                               "https://danwang.co/feed/"
                                "https://newsletter.semianalysis.com/feed"
                                "https://branchfree.org/feed/"
                                "https://taylor.town/feed.xml"
