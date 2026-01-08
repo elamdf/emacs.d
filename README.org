@@ -88,6 +88,7 @@
   (dolist (hook '(org-mode-hook term-mode-hook shell-mode-hook eshell-mode-hook))
     (add-hook hook (lambda () (display-line-numbers-mode 0))))
     (global-set-key (kbd "M-o")   #'other-window)
+    (global-set-key (kbd "M-O")   #'other-frame)
 #+END_SRC
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
@@ -275,10 +276,7 @@
       (use-package flycheck)
 
       (global-flycheck-mode)
-      ;; flyover for prettier inline syntax checks
-      (require 'flyover)
-      (add-hook 'flycheck-mode-hook #'flyover-mode)
-      (setq flyover-checkers '(flycheck flymake))
+
 
 
       ;; Use theme colors for error/warning/info faces
@@ -444,6 +442,23 @@
 
 #+RESULTS:
 : t
+
+
+* rust lsp stuff
+#+begin_src emacs-lisp
+      (use-package rust-mode
+        :init
+          (setq rust-mode-treesitter-derive t))
+    (setq rust-format-on-save t)
+    (add-hook 'rust-mode-hook
+              (lambda () (prettify-symbols-mode)))
+  (use-package flycheck-rust)
+  (with-eval-after-load 'rust-mode
+    (add-hook 'flycheck-mode-hook #'flycheck-rust-setup))
+#+end_src
+
+#+RESULTS:
+| #[nil ((prettify-symbols-mode)) nil] | rust-maybe-initialize-buffer-project | eglot-ensure | doom-modeline-env-setup-rust |
 
 
 
@@ -782,7 +797,7 @@
   (require 'brain)
   ;; Enable inline‑cr in common prose modes
   (global-set-key (kbd "M-;") #'inline-cr-maybe-toggle-active)
-  (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook))
+  (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook rust-mode-hook))
     (add-hook hook #'inline-cr-mode))
     (add-hook 'magit-status-headers-hook #'bismuth-magit-insert-actionables t)
 #+END_SRC
