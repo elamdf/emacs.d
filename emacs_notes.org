@@ -69,3 +69,11 @@ f3 defines macro, f4 ends def or runs last defined macro
 c-x c-k r runs on each selected
 
 org sparse tree C-c /
+
+* Forge
+from magit
+N v p opens PR menu
+b f checks out branch from PR
+Z n checks out branch from PR in new worktree
+
+% brings up worktree menu
