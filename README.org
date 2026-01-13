@@ -3,28 +3,32 @@
 
 * Startup & UI Basics
 #+BEGIN_SRC emacs-lisp
-    (setq inhibit-startup-message t)
-    (shell-command "git submodule update --init")
+  (setq inhibit-startup-message t)
+  (shell-command "git submodule update --init")
   ;; we launch in daemon mode, but want these enabled for when we attach
   ;;  (when (display-graphic-p)
-      (setq visible-bell t)                 ; no audible bell
-      (setq split-width-threshold 1)        ; prefer vertical splits
-      (scroll-bar-mode -1)                  ; hide scroll bar
-      (tool-bar-mode   -1)                  ; hide toolbar
-      (tooltip-mode   -1)                   ; hide tooltips
-      (set-fringe-mode 10)                  ; extra margin
-      (menu-bar-mode   -1)                  ; hide menu bar
-      (defvar elamdf/fixed-width-font  "Fira Code Retina"
-        "The font to use for monospaced (fixed width) text.")
-      (defvar elamdf/variable-width-font "Iosevka Aile"
+  (setq visible-bell t)                 ; no audible bell
+  (setq split-width-threshold 1)        ; prefer vertical splits
+  (scroll-bar-mode -1)                  ; hide scroll bar
+  (tool-bar-mode   -1)                  ; hide toolbar
+  (tooltip-mode   -1)                   ; hide tooltips
+  (set-fringe-mode 10)                  ; extra margin
+  (menu-bar-mode   -1)                  ; hide menu bar
+  (defvar elamdf/fixed-width-font  "Fira Code Retina"
+    "The font to use for monospaced (fixed width) text.")
+  (defvar elamdf/variable-width-font "Iosevka Aile"
 
-        "The font to use for variable-pitch (document) text.")
-      (set-face-attribute 'default nil :font elamdf/fixed-width-font :height 140)
+    "The font to use for variable-pitch (document) text.")
+  (set-face-attribute 'default nil :font elamdf/fixed-width-font :height 140)
   ;;)
+  ;; make shell output not take forever to display
+  (setq read-process-output-max (* 1024 1024)) ; 1MB
+
 
 #+END_SRC
 
 #+RESULTS:
+: 1048576
 
 * Personal Modules & Paths
 #+BEGIN_SRC emacs-lisp
@@ -92,50 +96,47 @@
 #+END_SRC
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
-  (use-package company)
-  (use-package doom-themes)
+    (use-package company)
+    (use-package doom-themes)
 
-  (add-to-list 'custom-theme-load-path (concat user-emacs-directory "/lisp"))
-  ;;  (load-theme 'alabaster t)
-  (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
-  (setq mac-command-modifier 'meta)
-  (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
-  (setq-default indent-tabs-mode nil)
-  (use-package markdown-mode
-    :mode ("README\\.md\\'" . gfm-mode)
-    :init (setq markdown-command "multimarkdown")
-    :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
+    (add-to-list 'custom-theme-load-path (concat user-emacs-directory "/lisp"))
+    ;;  (load-theme 'alabaster t)
+    (use-package doom-modeline :init (doom-modeline-mode 1) :custom ((doom-modeline-height 25)))
+    (setq mac-command-modifier 'meta)
+    (use-package rainbow-delimiters :hook (prog-mode . rainbow-delimiters-mode))
+    (setq-default indent-tabs-mode nil)
+    (use-package markdown-mode
+      :mode ("README\\.md\\'" . gfm-mode)
+      :init (setq markdown-command "multimarkdown")
+      :bind (:map markdown-mode-map ("C-c C-e" . markdown-do)))
 
 
 
-  (defun elamdf/markdown-no-comment-start ()
-    (setq-local comment-start nil))
-  (add-hook 'markdown-mode-hook #'elamdf/markdown-no-comment-start)
+    (defun elamdf/markdown-no-comment-start ()
+      (setq-local comment-start nil))
+    (add-hook 'markdown-mode-hook #'elamdf/markdown-no-comment-start)
 
-  ;; casual
-  (use-package general)
-  (use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
-    :config
-    (require 'casual-calc)
-    (require 'casual-dired)
-    (require 'casual-agenda)
-    (require 'casual-image)
-    (require 'casual-ibuffer)
-    (require 'casual-info)
-    (require 'casual-make)
-    :general
-    (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
-    (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
-    (:keymaps 'calc-mode-map "C-o" 'casual-calc-tmenu)
-    (:keymaps 'dired-mode-map "C-o" 'casual-dired-tmenu)
-    (:keymaps 'make-mode-map "C-o" 'casual-make-tmenu)
-    (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
+    ;; casual
+    (use-package general)
+    (use-package casual ;; A collection of  user interfaces for various built-in Emacs modes.
+      :config
+      (require 'casual-calc)
+      (require 'casual-dired)
+      (require 'casual-agenda)
+      (require 'casual-image)
+      (require 'casual-ibuffer)
+      (require 'casual-info)
+      (require 'casual-make)
+      :general
+      (:keymaps 'org-agenda-mode-map "C-o" 'casual-agenda-tmenu)
+      (:keymaps 'bookmark-bmenu-mode-map "C-o" 'casual-bookmarks-tmenu)
+      (:keymaps 'calc-mode-map "C-o" 'casual-calc-tmenu)
+      (:keymaps 'dired-mode-map "C-o" 'casual-dired-tmenu)
+      (:keymaps 'make-mode-map "C-o" 'casual-make-tmenu)
+      (:keymaps 'Info-mode-map "C-o" 'casual-info-tmenu))
 
-  (use-package cond-let
-    :straight (:type git :host github :repo "tarsius/cond-let"))
 #+END_SRC
 
-#+RESULTS:
 * Obsidian helpers
 #+begin_src emacs-lisp
 
@@ -221,28 +222,34 @@
 
 * Project & Version Control
 #+BEGIN_SRC emacs-lisp
-  (use-package projectile
-    :diminish projectile-mode
-    :config (projectile-mode)
-    :custom (projectile-completion-system 'default)
-    :bind-keymap ("C-c p" . projectile-command-map)
-    :init
-    (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
-    (setq projectile-switch-project-action #'projectile-dired))
-  (use-package consult-projectile
-    :straight (consult-projectile :type git :host gitlab :repo "OlMon/consult-projectile" :branch "master"))
-  (use-package magit :commands magit-status)
-  (use-package forge :after magit)
-  (use-package pr-review :after magit)
-  (setq auth-sources '("\~/.authinfo"))
-  ;; use consult instead of projectile ripgrep
-    ;; (global-set-key (kbd "C-c p s r") 'consult-ripgrep)
-  (use-package projectile-ripgrep)
+    (use-package projectile
+      :diminish projectile-mode
+      :config (projectile-mode)
+      :custom (projectile-completion-system 'default)
+      :bind-keymap ("C-c p" . projectile-command-map)
+      :init
+      (setq projectile-project-search-path '("~/bwrc" "~/Documents"))
+      (setq projectile-switch-project-action #'projectile-dired))
+    (use-package consult-projectile
+      :straight (consult-projectile :type git :host gitlab :repo "OlMon/consult-projectile" :branch "master"))
+    (use-package magit :commands magit-status)
+    (use-package forge :after magit)
+    (use-package pr-review :after magit)
+    (setq auth-sources '("\~/.authinfo"))
+    ;; use consult instead of projectile ripgrep
+      ;; (global-set-key (kbd "C-c p s r") 'consult-ripgrep)
+    (use-package projectile-ripgrep)
 
-(add-hook 'projectile-after-switch-project-hook
-          #'projectile-find-file)
-  (use-package ripgrep)
-  (use-package rg)
+  (add-hook 'projectile-after-switch-project-hook
+            #'projectile-find-file)
+    (use-package ripgrep)
+    (use-package rg)
+  ;; get ansi color in compilation output
+(require 'ansi-color)
+(defun elamdf/compilation-ansi-color ()
+  (let ((inhibit-read-only t))
+    (ansi-color-apply-on-region compilation-filter-start (point))))
+(add-hook 'compilation-filter-hook #'elamdf/compilation-ansi-color)
 
 #+END_SRC
 
@@ -252,91 +259,77 @@
 
 * Language & LSP Support
 #+BEGIN_SRC emacs-lisp
-      (use-package eglot
+  (use-package eglot
+
+          :ensure t
+          :hook ((( scala-mode python-mode rust-mode tuareg-mode caml-mode c-mode-hook c++-mode-hook c-or-c++-mode-hook )
+                  . eglot-ensure)
+
+                 ((cider-mode eglot-managed-mode) . eglot-disable-in-cider))
+          :preface
+          (defun eglot-disable-in-cider ()
+            (when (eglot-managed-p)
+              (if (bound-and-true-p cider-mode)
+                  (progn
+                    (remove-hook 'completion-at-point-functions 'eglot-completion-at-point t)
+                    (remove-hook 'xref-backend-functions 'eglot-xref-backend t))
+                (add-hook 'completion-at-point-functions 'eglot-completion-at-point nil t)
+                (add-hook 'xref-backend-functions 'eglot-xref-backend nil t))))
+          :custom
+          (eglot-autoshutdown t)
+          (eglot-events-buffer-size 0)
+          (eglot-extend-to-xref nil))
+
+        ;; checks
+    ;; > CR elamdf for elamdf: make C-c ! n/p only go to errors
+        (use-package flycheck)
+
+        (global-flycheck-mode)
+
+
+        (use-package calyx-mode
+          :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+        (use-package platformio-mode)
+
+
+        (use-package typst-ts-mode
+          :straight '(:type git :host codeberg :repo "meow_king/typst-ts-mode")
+          :custom
+          (typst-ts-watch-options '("--open"))
+          (typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory))
+          (typst-ts-mode-enable-raw-blocks-highlight t)
+          :config
+          (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
+
+        (add-to-list 'auto-mode-alist '("\\.typ\\'" . typst-ts-mode))
+        (with-eval-after-load 'eglot
+          (with-eval-after-load 'typst-ts-mode
+            (add-to-list 'eglot-server-programs
+                         `((typst-ts-mode) .
+                           ,(eglot-alternatives `(,typst-ts-lsp-download-path
+                                                  "tinymist"
+                                                  "typst-lsp"))))))
+
+
+      (use-package opam-switch-mode
         :ensure t
-        :hook ((( scala-mode python-mode rust-mode tuareg-mode caml-mode c-mode-hook c++-mode-hook c-or-c++-mode-hook )
-                . eglot-ensure)
-
-               ((cider-mode eglot-managed-mode) . eglot-disable-in-cider))
-        :preface
-        (defun eglot-disable-in-cider ()
-          (when (eglot-managed-p)
-            (if (bound-and-true-p cider-mode)
-                (progn
-                  (remove-hook 'completion-at-point-functions 'eglot-completion-at-point t)
-                  (remove-hook 'xref-backend-functions 'eglot-xref-backend t))
-              (add-hook 'completion-at-point-functions 'eglot-completion-at-point nil t)
-              (add-hook 'xref-backend-functions 'eglot-xref-backend nil t))))
-        :custom
-        (eglot-autoshutdown t)
-        (eglot-events-buffer-size 0)
-        (eglot-extend-to-xref nil))
-
-      ;; checks
-      (use-package flycheck)
-
-      (global-flycheck-mode)
-
-
-
-      ;; Use theme colors for error/warning/info faces
-      (setq flyover-use-theme-colors 0)
-
-      ;; Adjust background lightness (lower values = darker)
-      (setq flyover-background-lightness 70)
-
-      ;; Make icon background darker than foreground
-      (setq flyover-percent-darker 40)
-
-      (setq flyover-text-tint nil) ;; or 'darker or nil
-
-      ;; "Percentage to lighten or darken the text when tinting is enabled."
-      (setq flyover-text-tint-percent 100)
-      (setq flyover-levels '(error))    ; Show only errors and warnings
-
-      (use-package calyx-mode
-        :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
-      (use-package platformio-mode)
-
-
-      (use-package typst-ts-mode
-        :straight '(:type git :host codeberg :repo "meow_king/typst-ts-mode")
-        :custom
-        (typst-ts-watch-options '("--open"))
-        (typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory))
-        (typst-ts-mode-enable-raw-blocks-highlight t)
-        :config
-        (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
-
-      (add-to-list 'auto-mode-alist '("\\.typ\\'" . typst-ts-mode))
-      (with-eval-after-load 'eglot
-        (with-eval-after-load 'typst-ts-mode
-          (add-to-list 'eglot-server-programs
-                       `((typst-ts-mode) .
-                         ,(eglot-alternatives `(,typst-ts-lsp-download-path
-                                                "tinymist"
-                                                "typst-lsp"))))))
-
-
-    (use-package opam-switch-mode
-      :ensure t
-      :hook
-      ((coq-mode tuareg-mode) . opam-switch-mode))
-      (use-package proof-general)
-      (setq proof-three-window-mode-policy 'vertical)
-      (setq proof-shrink-windows-tofit t)
-      (use-package just-mode)
-  (require `bsv-mode-23)
-  ;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
-  (require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
-  ;; ## end of OPAM user-setup addition for emacs / base ## keep this line
-  ;; compile mode setup
-  (setq compilation-scroll-output t)
+        :hook
+        ((coq-mode tuareg-mode) . opam-switch-mode))
+        (use-package proof-general)
+        (setq proof-three-window-mode-policy 'vertical)
+        (setq proof-shrink-windows-tofit t)
+        (use-package just-mode)
+    (require `bsv-mode-23)
+    ;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
+    (require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
+    ;; ## end of OPAM user-setup addition for emacs / base ## keep this line
+    ;; compile mode setup
+    (setq compilation-scroll-output t)
 
 #+END_SRC
 
 #+RESULTS:
-: opam-user-setup
+: t
 
 
 

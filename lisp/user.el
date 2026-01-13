@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 
 ;; global defs
 (defvar elamdf/org-projects-dir "~/Documents/projects/")
@@ -231,4 +232,9 @@ Excludes lines beginning with * or #. Prints result in echo area."
          (reading-time (/ (+ word-count reading-speed -1) reading-speed)))
     (message "%d words, ~%d pages, ~%d min read"
              word-count page-count reading-time)))
+
+
+
+
+
 (provide 'user)
