@@ -70,6 +70,7 @@ c-x c-k r runs on each selected
 
 org sparse tree C-c /
 
+C-x i reads a file into this buffer
 * Forge
 from magit
 N v p opens PR menu
