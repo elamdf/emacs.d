@@ -1,8 +1,9 @@
 ;; -*- lexical-binding: t; -*-
 
-;; global defs
+;;; Globals
 (defvar elamdf/org-projects-dir "~/Documents/projects/")
 
+;;; Org + Elfeed capture
 (defun elamdf/elfeed-org-capture-or-goto ()
   "Create an Org capture entry for the current elfeed entry, or jump to it if it already exists.
 Run this from an `elfeed-entry` buffer."
@@ -36,7 +37,7 @@ Run this from an `elfeed-entry` buffer."
                             ":END:\n\n%?"))))
             (org-capture)))))))
 
-
+;;; Org sorting
 (defun elamdf/compare-todo-status (a b)
   "Compare strings A and B based on embedded TODO statuses: TODO < WAIT < DONE.
 Return 1 if A > B, 0 if A = B, and -1 if A < B."
@@ -50,7 +51,8 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
          ((< rank-a rank-b) -1)
          ((> rank-a rank-b) 1)
          (t 0))))))
-;; org meeting stuff
+
+;;; Org meeting notes
 (defvar elamdf/meeting-notes-dir
   (expand-file-name "~/Documents/meeting_notes")
   "Directory where new meeting notes files are created.")
@@ -89,7 +91,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
             (set-buffer-modified-p nil)
             (message "Renamed and switched to: %s" new-name)))))))
 
-
+;;; Org participants
 (defun elamdf/insert-org-participant-tags ()
   "Prompt for participant names, add new ones to the file, and return a #+TAGS: line as a string."
   (let* ((file "~/.org-participants.txt")
@@ -114,7 +116,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
           (append-to-file (point-min) (point-max) file))))
     tag-line))  ;; Return this string instead of inserting
 
-
+;;; Org quotes
 (defvar elamdf/org-quotes
   '("\“All you have to do is write one true sentence. Write the truest sentence that you know.\” Ernest Hemingway"))
 
@@ -125,6 +127,14 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
              (not (file-exists-p buffer-file-name)))
     (message "%s" (nth (random (length elamdf/org-quotes)) elamdf/org-quotes))))
 
+;;; Display buffer
+(defun elamdf/flycheck-error-list-display-p (buffer _action)
+  (let ((buf (get-buffer buffer)))
+    (and (eq major-mode 'flycheck-error-list-mode)
+         (= (count-windows) 2)
+         (not (eq buf (current-buffer))))))
+
+;;; Processes
 (defun elamdf/ensure-ollama-running (&rest args)
   "Start `ollama serve` if it's not already running."
   (unless (get-process "ollama")
@@ -133,13 +143,13 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
                  "pgrep -f 'ollama serve' || ollama serve")))
       (set-process-query-on-exit-flag proc nil))))
 
+;;; Org projects
 (defun elamdf/org-project-files ()
   "Return a list of all .org files in `elamdf/org-projects-dir`."
   (directory-files-recursively elamdf/org-projects-dir "\\.org$"))
 
-
+;;; Zotero
 (defun elamdf/zotero-latest-capture-string ()
-
   "Return an Org entry string with title, authors, and tag from the most recently added Zotero item."
   (let* ((query
           "SELECT title.value AS title, \
@@ -159,7 +169,6 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
            LIMIT 1;")
          (cmd (format "sqlite3 -readonly -separator \"|\" ~/Zotero/zotero.sqlite \"%s\"" query))
          (raw (shell-command-to-string cmd)))
-
     (if (string-match "\\(.*?\\)|\\(.*?\\)|\\(.*\\)" raw)
         (let* ((title (string-trim (match-string 1 raw)))
                (authors (string-trim (match-string 2 raw)))
@@ -172,7 +181,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
 :AUTHORS: %s" title   (or (and (not (string-blank-p tag)) (format ":%s:" tag)) "") (or (and (not (string-blank-p authors)) authors) "") ))
       "[No Zotero item found] \nqq%?")))
 
-
+;;; Hideshow
 (defun elamdf/hs-cycle (&optional level)
   (interactive "p")
   (let (message-log-max
@@ -207,6 +216,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
      (setq this-command 'elamdf/hs-global-show))
     (_ (hs-hide-all))))
 
+;;; Org stats
 (defun elamdf/org-word-count ()
   "Count words in region/buffer, estimate pages, and reading time.
 Excludes lines beginning with * or #. Prints result in echo area."
@@ -233,8 +243,11 @@ Excludes lines beginning with * or #. Prints result in echo area."
     (message "%d words, ~%d pages, ~%d min read"
              word-count page-count reading-time)))
 
-
-
-
+;;; Minibuffer
+(defun elamdf/switch-to-minibuffer-window ()
+  "switch to minibuffer window (if active)"
+  (interactive)
+  (when (active-minibuffer-window)
+    (select-window (active-minibuffer-window))))
 
 (provide 'user)
