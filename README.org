@@ -93,6 +93,10 @@
     (add-hook hook (lambda () (display-line-numbers-mode 0))))
     (global-set-key (kbd "M-o")   #'other-window)
     (global-set-key (kbd "M-O")   #'other-frame)
+
+
+(global-set-key (kbd "C-M-g") 'elamdf/switch-to-minibuffer-window)
+
 #+END_SRC
 * UI, Completion & Navigation
 #+BEGIN_SRC emacs-lisp
@@ -282,7 +286,12 @@
 
         ;; checks
     ;; > CR elamdf for elamdf: make C-c ! n/p only go to errors
-        (use-package flycheck)
+        (use-package flycheck
+          :config
+          (add-to-list 'display-buffer-alist
+                       '(elamdf/flycheck-error-list-display-p
+                         (display-buffer-use-some-window)
+                         (inhibit-same-window . t))))
 
         (global-flycheck-mode)
 
@@ -442,6 +451,7 @@
       (use-package rust-mode
         :init
           (setq rust-mode-treesitter-derive t))
+(setq lsp-rust-analyzer-cargo-watch-command "clippy")
     (setq rust-format-on-save t)
     (add-hook 'rust-mode-hook
               (lambda () (prettify-symbols-mode)))
@@ -790,7 +800,7 @@
   (require 'brain)
   ;; Enable inline‑cr in common prose modes
   (global-set-key (kbd "M-;") #'inline-cr-maybe-toggle-active)
-  (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook rust-mode-hook))
+  (dolist (hook '(markdown-mode-hook org-mode-hook c-mode-hook rust-mode-hook rust-conf-mode))
     (add-hook hook #'inline-cr-mode))
     (add-hook 'magit-status-headers-hook #'bismuth-magit-insert-actionables t)
 #+END_SRC
