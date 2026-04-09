@@ -821,10 +821,12 @@
                                "https://vighneshiyer.com/rss.xml"
                                "https://mtlcad.mit.edu/rss.xml"
                                "https://elam.day/post/atom.xml"
+                               "https://stng.substack.com/feed"
                                "https://roonscape.ai/feed"
                                "https://www.julian.ac/feeds/all.rss.xml"
                                "https://mcyoung.xyz/feed"
                                "https://www.thonking.ai/feed"
+"https://www.persuasion.community/feed"
                                "https://colah.github.io/rss"))
 
     (add-hook 'elfeed-show-mode-hook 'olivetti-mode)
