@@ -250,4 +250,29 @@ Excludes lines beginning with * or #. Prints result in echo area."
   (when (active-minibuffer-window)
     (select-window (active-minibuffer-window))))
 
+(defun elamdf/buffers-in-directory (dir)
+  "Return all buffers whose `default-directory` is inside DIR."
+  (let ((dir (file-name-as-directory (expand-file-name dir))))
+    (seq-filter
+     (lambda (buf)
+       (when-let ((bd (buffer-local-value 'default-directory buf)))
+         (string-prefix-p dir (expand-file-name bd))))
+     (buffer-list))))
+(defun elamdf/kill-buffers-in-directory (dir)
+  "Kill all buffers belonging to DIR."
+  (interactive "DDirectory: ")
+  (dolist (buf (elamdf/buffers-in-directory dir))
+    (when (buffer-live-p buf)
+      (kill-buffer buf))))
+
+(defun elamdf/magit-worktree-delete-advice (orig dir &rest args)
+  (let ((abs (expand-file-name dir)))
+    (apply orig dir args)
+    (elamdf/kill-buffers-in-directory abs)))
+
+
+(advice-add 'magit-worktree-delete :around
+            #'elamdf/magit-worktree-delete-advice)
+
+
 (provide 'user)
