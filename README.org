@@ -14,7 +14,7 @@
   (tooltip-mode   -1)                   ; hide tooltips
   (set-fringe-mode 10)                  ; extra margin
   (menu-bar-mode   -1)                  ; hide menu bar
-  (defvar elamdf/fixed-width-font  "Fira Code Retina"
+  (defvar elamdf/fixed-width-font "JetBrainsMono Nerd Font Mono"
     "The font to use for monospaced (fixed width) text.")
   (defvar elamdf/variable-width-font "Iosevka Aile"
 
