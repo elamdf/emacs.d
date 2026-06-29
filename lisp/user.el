@@ -81,7 +81,7 @@ Return 1 if A > B, 0 if A = B, and -1 if A < B."
       (let* ((title (match-string 1))
              (safe-title (replace-regexp-in-string "[^a-zA-Z0-9]+" "_" (downcase title)))
              (date (format-time-string "%Y-%m-%d"))
-             (new-name (file-name-nondirectory (format "%s_%s.org" safe-title date)))
+             (new-name (file-name-nondirectory (format "%s_%s.org" date safe-title)))
              (new-path (expand-file-name new-name elamdf/meeting-notes-dir)))
         (unless (string= new-path buffer-file-name)
           (when (or (not (file-exists-p new-path))
