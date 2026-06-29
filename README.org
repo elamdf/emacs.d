@@ -147,6 +147,10 @@
 
       ;; alist
 
+    ;; copy region as fontified rich text, useful for copying into keynote
+  (require 'highlight2clipboard)
+  (highlight2clipboard-mode 1)
+
   (add-to-list 'display-buffer-alist
              '("\\*\\(compilation\\|Flycheck errors\\)\\*"
                (display-buffer-at-bottom display-buffer-in-side-window)
@@ -752,6 +756,7 @@
   (global-set-key (kbd "C-c c") #'org-capture)
 
   (global-set-key (kbd "C-c m") #'elamdf/create-meeting-notes-file)
+
 
   ;; elfeed
   (global-set-key (kbd "C-x w w") #'elfeed)
