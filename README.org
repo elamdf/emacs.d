@@ -149,7 +149,8 @@
 
     ;; copy region as fontified rich text, useful for copying into keynote
   (require 'highlight2clipboard)
-  (highlight2clipboard-mode 1)
+  ;; not on my default, makes killing/yanking slow
+  ;; (highlight2clipboard-mode 1)
 
   (add-to-list 'display-buffer-alist
              '("\\*\\(compilation\\|Flycheck errors\\)\\*"
@@ -374,6 +375,10 @@
 * python lsp stuff
 #+begin_src emacs-lisp
 (setq python-shell-interpreter "python3")
+
+  (with-eval-after-load 'eglot
+    (add-to-list 'eglot-server-programs
+                 '((python-mode python-ts-mode) . ("python3" "-m" "pylsp"))))
 
   (use-package python
     :config
