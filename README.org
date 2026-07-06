@@ -287,76 +287,79 @@
 
 * Language & LSP Support
 #+BEGIN_SRC emacs-lisp
-    (use-package eglot
+  (use-package eglot
 
-            :ensure t
-            :hook ((( scala-mode python-mode rust-mode tuareg-mode caml-mode c-mode-hook c++-mode-hook c-or-c++-mode-hook )
-                    . eglot-ensure)
+    :ensure t
+    :hook ((( scala-mode python-mode rust-mode tuareg-mode caml-mode c-mode-hook c++-mode-hook c-or-c++-mode-hook )
+            . eglot-ensure)
 
-                   ((cider-mode eglot-managed-mode) . eglot-disable-in-cider))
-            :preface
-            (defun eglot-disable-in-cider ()
-              (when (eglot-managed-p)
-                (if (bound-and-true-p cider-mode)
-                    (progn
-                      (remove-hook 'completion-at-point-functions 'eglot-completion-at-point t)
-                      (remove-hook 'xref-backend-functions 'eglot-xref-backend t))
-                  (add-hook 'completion-at-point-functions 'eglot-completion-at-point nil t)
-                  (add-hook 'xref-backend-functions 'eglot-xref-backend nil t))))
-            :custom
-            (eglot-autoshutdown t)
-            (eglot-events-buffer-size 0)
-            (eglot-extend-to-xref nil))
+           ((cider-mode eglot-managed-mode) . eglot-disable-in-cider))
+    :preface
+    (defun eglot-disable-in-cider ()
+      (when (eglot-managed-p)
+        (if (bound-and-true-p cider-mode)
+            (progn
+              (remove-hook 'completion-at-point-functions 'eglot-completion-at-point t)
+              (remove-hook 'xref-backend-functions 'eglot-xref-backend t))
+          (add-hook 'completion-at-point-functions 'eglot-completion-at-point nil t)
+          (add-hook 'xref-backend-functions 'eglot-xref-backend nil t))))
+    :custom
+    (eglot-autoshutdown t)
+    (eglot-events-buffer-size 0)
+    (eglot-extend-to-xref nil))
 
-          ;; checks
-      ;; > CR elamdf for elamdf: make C-c ! n/p only go to errors
-
-
-          (use-package flycheck)
-          (global-flycheck-mode)
+  ;; checks
+  ;; > CR elamdf for elamdf: make C-c ! n/p only go to errors
 
 
-
-          (use-package calyx-mode
-            :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
-          (use-package platformio-mode)
+  (use-package flycheck)
+  (global-flycheck-mode)
 
 
-          (use-package typst-ts-mode
-            :straight '(:type git :host codeberg :repo "meow_king/typst-ts-mode")
-            :custom
-            (typst-ts-watch-options '("--open"))
-            (typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory))
-            (typst-ts-mode-enable-raw-blocks-highlight t)
-            :config
-            (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
 
-          (add-to-list 'auto-mode-alist '("\\.typ\\'" . typst-ts-mode))
-          (with-eval-after-load 'eglot
-            (with-eval-after-load 'typst-ts-mode
-              (add-to-list 'eglot-server-programs
-                           `((typst-ts-mode) .
-                             ,(eglot-alternatives `(,typst-ts-lsp-download-path
-                                                    "tinymist"
-                                                    "typst-lsp"))))))
+  (use-package calyx-mode
+    :straight (calyx-mode :host github :repo "sgpthomas/calyx-mode"))
+  (use-package platformio-mode)
 
-(use-package websocket)
-(use-package typst-preview
-  :load-path "lisp/typst-preview.el")
-        (use-package opam-switch-mode
-          :ensure t
-          :hook
-          ((coq-mode tuareg-mode) . opam-switch-mode))
-          (use-package proof-general)
-          (setq proof-three-window-mode-policy 'vertical)
-          (setq proof-shrink-windows-tofit t)
-          (use-package just-mode)
-      (require `bsv-mode-23)
-      ;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
-      (require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
-      ;; ## end of OPAM user-setup addition for emacs / base ## keep this line
-      ;; compile mode setup
-      (setq compilation-scroll-output nil)
+
+  (use-package typst-ts-mode
+    :straight '(:type git :host codeberg :repo "meow_king/typst-ts-mode")
+    :custom
+    (typst-ts-watch-options '("--open"))
+    (typst-ts-mode-grammar-location (expand-file-name "tree-sitter/libtree-sitter-typst.so" user-emacs-directory))
+    (typst-ts-mode-enable-raw-blocks-highlight t)
+    :config
+    (keymap-set typst-ts-mode-map "C-c C-c" #'typst-ts-tmenu))
+
+  (add-to-list 'auto-mode-alist '("\\.typ\\'" . typst-ts-mode))
+  (with-eval-after-load 'eglot
+    (with-eval-after-load 'typst-ts-mode
+      (add-to-list 'eglot-server-programs
+                   `((typst-ts-mode) .
+                     ,(eglot-alternatives `(,typst-ts-lsp-download-path
+                                            "tinymist"
+                                            "typst-lsp"))))))
+
+  (use-package websocket)
+  (use-package typst-preview
+    :load-path "lisp/typst-preview.el")
+  (use-package opam-switch-mode
+    :ensure t
+    :hook
+    ((coq-mode tuareg-mode) . opam-switch-mode))
+  (use-package proof-general)
+  (push '("\\.v\\'" . verilog-mode) auto-mode-alist)
+
+
+  (setq proof-three-window-mode-policy 'vertical)
+  (setq proof-shrink-windows-tofit t)
+  (use-package just-mode)
+  (require `bsv-mode-23)
+  ;; ## added by OPAM user-setup for emacs / base ## 56ab50dc8996d2bb95e7856a6eddb17b ## you can edit, but keep this line
+  (require 'opam-user-setup "~/.emacs.d/opam-user-setup.el")
+  ;; ## end of OPAM user-setup addition for emacs / base ## keep this line
+  ;; compile mode setup
+  (setq compilation-scroll-output nil)
 
 #+END_SRC
 
