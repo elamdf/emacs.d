@@ -394,13 +394,10 @@
     :defer t
     :hook (inferior-python-mode . hide-mode-line-mode))
 
-(use-package blacken
-  :ensure t
-  :defer t
-  :custom
-  (blacken-allow-py36 t)
-  (blacken-skip-string-normalization t)
-  :hook (python-mode-hook . blacken-mode))
+  (use-package ruff-fromat)
+  (add-hook 'python-mode-hook 'ruff-format-on-save-mode)
+
+
 #+end_src
 
 * Systemverilog lsp stuff
