@@ -550,35 +550,55 @@
 #+RESULTS:
 | balance-parens | inline-cr-mode | elamdf/markdown-no-comment-start |
 
+* Ghostel
+#+begin_src emacs-lisp
+  (use-package ghostel
+  :bind (("C-x m" . ghostel)
+         :map ghostel-semi-char-mode-map
+         ("C-s"  . consult-line)
+         ("M-<backspace>" . ghostel-backward-kill-word)
+         ;; ;; I'm used to go up/down the shell history with M-n/p from eshell
+         ;; ;; Simulate this behavior in ghostel by sending C-p and C-n
+         ("M-p" . (lambda () (interactive) (ghostel-send-key "p" "ctrl")))
+         ("M-n" . (lambda () (interactive) (ghostel-send-key "n" "ctrl")))
+         :map project-prefix-map
+         ("m" . ghostel-project)
+         ("M" . ghostel-project-list-buffers))
+  :config
+  (defun ghostel-send-C-k-and-kill ()
+    "Send `C-k' to ghostel.
+Like normal Emacs `C-k'.  Kill to end of line and put content in kill-ring."
+    (interactive)
+    (kill-ring-save (point) (line-end-position))
+    (ghostel-send-key "k" "ctrl"))
+
+  (add-to-list 'project-switch-commands '(ghostel-project "Ghostel") t)
+  (add-to-list 'project-switch-commands '(ghostel-project-list-buffers "Ghostel buffers") t)
+  (add-to-list 'ghostel-eval-cmds '("magit-status-setup-buffer" magit-status-setup-buffer)))
+
+(use-package ghostel-eshell
+  :hook (eshell-load . ghostel-eshell-visual-command-mode))
+
+(use-package ghostel-compile
+  :hook (after-init . ghostel-compile-global-mode))
+
+(use-package ghostel-comint
+  :hook (after-init . ghostel-comint-global-mode))
+#+end_src
+
+#+RESULTS:
 
 * Codex
 #+begin_src emacs-lisp
-  (use-package codex-cli
-  ;; For MELPA: :ensure t
-  ;; For GitHub (Emacs 29+):
-  ;; :vc (:fetcher github :repo "bennfocus/codex-cli.el")
-  :bind (("C-x a t" . codex-cli-toggle)
-         ("C-x a s" . codex-cli-start)
-         ("C-x a q" . codex-cli-stop)
-         ("C-x a Q" . codex-cli-stop-all)
-         ("C-x a p" . codex-cli-send-prompt)
-         ("C-x a r" . codex-cli-send-region)
-         ("C-x a f" . codex-cli-send-file)
-         ;; Show-all layout + paging
-         ("C-x a a" . codex-cli-toggle-all)
-         ;; ("C-x a n" . codex-cli-toggle-all-next-page)
-         ;; ("C-x b" . codex-cli-toggle-all-prev-page)
-         )
-  :init
-  (setq codex-cli-executable "codex"
-        codex-cli-terminal-backend 'vterm
-        codex-cli-side 'right
-        codex-cli-width 90))
+  (use-package codex
+    :straight (:host github :repo "benthamite/codex"))
+  (global-set-key (kbd "C-c x") codex-command-map)
+( setq codex-terminal-backend 'ghostel)
 
 #+end_src
 
 #+RESULTS:
-: codex-cli-toggle-all
+: (keymap (9 . codex-queue-followup) (69 . codex-edit-previous-message) (73 . codex-send-image) (111 . codex-send-buffer-file) (77 . codex-cycle-permissions) (51 . codex-send-3) (50 . codex-send-2) (49 . codex-send-1) (122 . codex-toggle-read-only-mode) (121 . codex-send-return) (120 . codex-send-command-with-context) (116 . codex-toggle) (115 . codex-send-command) (114 . codex-send-region) (110 . codex-send-escape) (109 . codex-transient) (108 . codex-redraw) (75 . codex-kill-all) (107 . codex-kill) (101 . codex-fix-error-at-point) (100 . codex-start-in-directory) (105 . codex-new-instance) (102 . codex-fork) (82 . codex-resume) (99 . codex) (66 . codex-select-buffer) (98 . codex-switch-to-buffer) (47 . codex-slash-commands))
 
 
 * Org Mode Configuration
