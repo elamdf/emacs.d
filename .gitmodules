@@ -4,3 +4,6 @@
 [submodule "yasnippet-snippets"]
 	path = yasnippet-snippets
 	url = https://github.com/elamdf/yasnippet-snippets.git
+[submodule "plugins/codex"]
+	path = plugins/codex
+	url = https://github.com/benthamite/codex.git
