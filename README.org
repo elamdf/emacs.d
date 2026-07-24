@@ -577,12 +577,18 @@
     (add-to-list 'ghostel-eval-cmds '("magit-status-setup-buffer" magit-status-setup-buffer)))
 
   (use-package ghostel-eshell
+    :ensure nil
+    :after ghostel
     :hook (eshell-load . ghostel-eshell-visual-command-mode))
 
   (use-package ghostel-compile
+    :ensure nil
+    :after ghostel
     :hook (after-init . ghostel-compile-global-mode))
 
   (use-package ghostel-comint
+    :ensure nil
+    :after ghostel
     :hook (after-init . ghostel-comint-global-mode))
 #+end_src
 
