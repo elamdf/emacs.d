@@ -37,9 +37,6 @@
   (add-to-list 'load-path (concat user-emacs-directory "/lisp"))
 
   (add-to-list 'load-path (concat user-emacs-directory "/bismuth"))
-  (add-to-list 'load-path (concat user-emacs-directory "/flyover"))
-
-
   (require 'user)                         ; personal helpers
   (require 'obsidian-helpers)                         ; personal helpers
   (require 'typewriter-mode)
@@ -609,7 +606,7 @@
 #+end_src
 
 #+RESULTS:
-: ghostel
+: #[nil ((use-package-autoload-keymap 'codex-command-map 'codex nil)) nil nil nil nil]
 
 
 * Org Mode Configuration
